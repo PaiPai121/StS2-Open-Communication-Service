@@ -8,6 +8,7 @@ generate a project that uses one.
 4. Download entire template project and load as a template in Rider (From step 7  here https://www.jetbrains.com/help/rider/Install_custom_project_templates.html#create-custom-project-template), 
    or get template from NuGet with `dotnet new install Alchyr.Sts2.Templates@1.0.3`. The github project will likely be slightly more up-to-date.
 5. Create new solution using template. The format should be `.sln`.
+   TEMPORARY: Your project name must come alphabetically after `BaseLib` for mod loading order. This should change in the future.
    Make sure not to put any spaces in the project name, and enable `Put solution and project in same directory`.
    Expand "Advanced Settings" (in Rider) to adjust author and some other options.
 6. Update filepaths at the top of the `.csproj` file. Select the project
