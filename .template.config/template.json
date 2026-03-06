@@ -14,7 +14,8 @@
             "exclude":[
                 ".git/**",
                 ".godot/**",
-                ".idea/**"
+                ".idea/**",
+                "README.md"
             ]
         }
     ],
