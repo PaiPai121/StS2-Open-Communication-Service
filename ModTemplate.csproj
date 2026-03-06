@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable> <!--Makes code analysis regarding null values stricter.-->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PublishDir>$(MSBuildProjectDirectory)\Publish</PublishDir>
-    <GodotPath>Z:\Projects\sts2\megadot\MegaDot_v4.5.1-stable_mono_win64.exe</GodotPath>
+    <GodotPath>C:\megadot\MegaDot_v4.5.1-stable_mono_win64.exe</GodotPath>
     <SteamLibraryPath>C:\Program Files (x86)\Steam\steamapps</SteamLibraryPath>
     <Sts2Path>$(SteamLibraryPath)\common\Slay the Spire 2</Sts2Path>
   </PropertyGroup>
