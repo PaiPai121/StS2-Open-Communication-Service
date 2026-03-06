@@ -4,21 +4,56 @@
     <ImplicitUsings>true</ImplicitUsings>
     <Nullable>enable</Nullable> <!--Makes code analysis regarding null values stricter.-->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GodotPath>C:\megadot\MegaDot_v4.5.1-stable_mono_win64.exe</GodotPath>
-    <SteamLibraryPath>C:\Program Files (x86)\Steam\steamapps</SteamLibraryPath>
-    <Sts2Path>$(SteamLibraryPath)\common\Slay the Spire 2</Sts2Path>
+  </PropertyGroup>
+
+  <!-- OS Detection -->
+  <PropertyGroup>
+    <IsWindows>false</IsWindows>
+    <IsLinux>false</IsLinux>
+    <IsOSX>false</IsOSX>
+    <IsWindows Condition="$([MSBuild]::IsOSPlatform('Windows'))">true</IsWindows>
+    <IsLinux Condition="$([MSBuild]::IsOSPlatform('Linux'))">true</IsLinux>
+    <IsOSX Condition="$([MSBuild]::IsOSPlatform('OSX'))">true</IsOSX>
+  </PropertyGroup>
+
+  <!-- Windows -->
+  <PropertyGroup Condition="'$(IsWindows)' == 'true'">
+    <SteamRoot Condition="'$(SteamRoot)' == ''">$(registry:HKEY_CURRENT_USER\Software\Valve\Steam@SteamPath)</SteamRoot>
+    <SteamLibraryPath Condition="'$(SteamLibraryPath)' == '' and '$(SteamRoot)' != ''">$(SteamRoot)\steamapps</SteamLibraryPath>
+    <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/data_sts2_windows_x86_64</Sts2DataDir>
+    <GodotPath Condition="'$(GodotPath)' == ''">C:\megadot\MegaDot_v4.5.1-stable_mono_win64.exe</GodotPath>
+  </PropertyGroup>
+
+  <!-- Linux -->
+  <PropertyGroup Condition="'$(IsLinux)' == 'true'">
+    <SteamLibraryPath Condition="'$(SteamLibraryPath)' == ''">$(HOME)/.local/share/Steam/steamapps</SteamLibraryPath>
+    <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/data_sts2_linuxbsd_x86_64</Sts2DataDir>
+    <GodotPath Condition="'$(GodotPath)' == ''">$(SteamLibraryPath)/common/Godot Engine/godot.x11.opt.tools.64</GodotPath>
+  </PropertyGroup>
+  <!-- // TODO: Megadot is version 4.5.1, and the game won't load pck if godot is newer. -->
+
+  <!-- macOS // TODO -->
+  <PropertyGroup Condition="'$(IsOSX)' == 'true'">
+    <SteamLibraryPath Condition="'$(SteamLibraryPath)' == ''">$(HOME)/Library/Application Support/Steam/steamapps</SteamLibraryPath>
+    <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/data_sts2_macos_x86_64</Sts2DataDir>
+    <GodotPath Condition="'$(GodotPath)' == ''"></GodotPath>
+  </PropertyGroup>
+
+  <!-- Common -->
+  <PropertyGroup>
+    <Sts2Path Condition="'$(Sts2Path)' == ''">$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>$(Sts2Path)\data_sts2_windows_x86_64\0Harmony.dll</HintPath>
+      <HintPath>$(Sts2DataDir)/0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="sts2">
-      <HintPath>$(Sts2Path)\data_sts2_windows_x86_64\sts2.dll</HintPath>
+      <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
       <Publicize>PublicizeSts</Publicize> <!--Allows private/protected field references but may cause errors.-->
     </Reference>
     <Reference Include="BaseLib">
-      <HintPath>$(Sts2Path)\mods\BaseLib.dll</HintPath>
+      <HintPath>$(Sts2Path)/mods/BaseLib.dll</HintPath>
     </Reference>
 
     <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="0.0.1" />
@@ -42,7 +77,7 @@
     <Content Include="project.godot"/>
     <Content Include="ModTemplate\**" />
   </ItemGroup>
-  
+
     <ItemGroup>
       <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3">
         <PrivateAssets>all</PrivateAssets>
@@ -55,8 +90,12 @@
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(Sts2Path)\mods\" />
   </Target>
 
-  <Target Name="GodotPublish" AfterTargets="Publish">
+  <Target Name="GodotPublish" AfterTargets="Publish" Condition="'$(GodotPath)' != '' and Exists('$(GodotPath)')">
     <Message Text="Exporting Godot .pck to mods folder" Importance="high"/>
-    <Exec Command="&quot;$(GodotPath)&quot; --headless --export-pack &quot;Windows Desktop&quot; &quot;$(Sts2Path)\mods\$(MSBuildProjectName).pck&quot;" ContinueOnError="WarnAndContinue"/>
+    <Exec Command="&quot;$(GodotPath)&quot; --headless --export-pack &quot;Windows Desktop&quot; &quot;$(Sts2Path)/mods/$(MSBuildProjectName).pck&quot;" ContinueOnError="WarnAndContinue"/>
+  </Target>
+
+  <Target Name="GodotPublishSkipped" AfterTargets="Publish" Condition="'$(GodotPath)' == '' or !Exists('$(GodotPath)')">
+    <Message Text="Skipping Godot .pck export because GodotPath is not configured." Importance="high"/>
   </Target>
 </Project>
