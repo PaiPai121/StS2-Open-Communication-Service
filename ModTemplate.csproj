@@ -50,13 +50,15 @@
     <ItemGroup>
         <Reference Include="0Harmony">
             <HintPath>$(Sts2DataDir)/0Harmony.dll</HintPath>
+            <Private>false</Private>
         </Reference>
         <Reference Include="sts2">
             <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
+            <Private>false</Private>
             <Publicize>{PublicizeSts}</Publicize> <!--Allows private/protected field references but may cause errors.-->
         </Reference>
 
-        <PackageReference Include="Alchyr.Sts2.BaseLib" Version="*" />
+        <PackageReference Include="Alchyr.Sts2.BaseLib" Version="*" PrivateAssets="All" />
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*" />
         <AdditionalFiles Include="ModTemplate/localization/**/*.json"/>
     </ItemGroup>
