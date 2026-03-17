@@ -3,6 +3,7 @@ using BaseLib.Extensions;
 using BaseLib.Utils;
 using CharMod.CharModCode.Character;
 using CharMod.CharModCode.Extensions;
+using Godot;
 
 namespace CharMod.CharModCode.Relics;
 

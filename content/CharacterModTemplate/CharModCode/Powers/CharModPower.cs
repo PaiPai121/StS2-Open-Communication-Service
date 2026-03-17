@@ -1,6 +1,7 @@
 ﻿using BaseLib.Abstracts;
 using BaseLib.Extensions;
 using CharMod.CharModCode.Extensions;
+using Godot;
 
 namespace CharMod.CharModCode.Powers;
 
