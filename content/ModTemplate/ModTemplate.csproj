@@ -72,14 +72,18 @@
         <Reference Include="sts2">
             <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
             <Private>false</Private>
-            <Publicize>{PublicizeSts}</Publicize> <!--Allows private/protected field references but may cause errors.-->
         </Reference>
+    </ItemGroup>
+    
+    <ItemGroup Condition="{PublicizeSts}"> <!--Allows private/protected field references but may cause errors.-->
+        <Publicize Include="sts2" IncludeVirtualMembers="false" IncludeCompilerGeneratedMembers="false" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Alchyr.Sts2.BaseLib" Version="*" PrivateAssets="All" />
+        <PackageReference Include="Krafs.Publicizer" Version="2.3.0" PrivateAssets="All"/>
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*" />
-        <AdditionalFiles Include="ModTemplate/localization/**/*.json"/>
+        <AdditionalFiles Include="ModTemplate/localization/**/*.json"/> <!-- Used by analyzer -->
     </ItemGroup>
 
     <ItemGroup>
@@ -98,13 +102,6 @@
         <None Include="ModTemplate.json" />
         <None Include="project.godot"/>
         <None Include="ModTemplate/**" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
     </ItemGroup>
     
     <Target Name="CheckDependencyPaths" >

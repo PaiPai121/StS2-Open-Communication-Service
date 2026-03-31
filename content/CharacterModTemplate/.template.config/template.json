@@ -33,6 +33,13 @@
             "replaces": "{ModAuthor}",
             "defaultValue": "Author"
         },
+        "PublicizeSts":{
+            "type": "parameter",
+            "dataType":"bool",
+            "defaultValue": "false",
+            "replaces": "{PublicizeSts}",
+            "description": "If enabled, non-virtual private and protected symbols in the Slay the Spire 2 .dll will be publicized."
+        },
         "NullableChecks":{
             "type": "parameter",
             "dataType":"choice",
