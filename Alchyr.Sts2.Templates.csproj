@@ -26,6 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="content\ModTemplate\NoTimeToDieCode\MainFile.cs" />
     <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**;content\**\packages\**;content\**\.idea\**;content\**\.git\**" />
     <Compile Remove="**\*" />
