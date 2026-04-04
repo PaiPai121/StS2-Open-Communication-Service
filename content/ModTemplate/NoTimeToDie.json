@@ -1,9 +1,9 @@
 {
-  "id": "ModTemplate",
-  "name": "ModTemplate",
-  "author": "{ModAuthor}",
+  "id": "NoTimeToDie",
+  "name": "No Time To Die",
+  "author": "Niya",
   "description": "Slay the Spire 2 speed control mod with in-game GUI",
-  "version": "v0.0.0",
+  "version": "v1.0.0",
   "has_pck": false,
   "has_dll": true,
   "affects_gameplay": true

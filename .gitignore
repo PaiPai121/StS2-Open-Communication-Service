@@ -1,8 +1,17 @@
-dotnet pack in this folder
+# dotnet pack in this folder
 .idea/
 .vs/
 bin/
 obj/
+
+# Godot / build artifacts
+.godot/
+**/.godot/
+
+# Local dependency copies (do NOT commit)
+lib/
+**/lib/
+*.dll
 
 # 忽略 Claude Code 的本地缓存和工作树
 .claude/

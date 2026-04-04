@@ -1,14 +1,14 @@
 {
-    "author": "Alchyr",
-    "name": "Slay the Spire 2 Mod",
-    "description": "A Slay the Spire 2 mod relying on BaseLib",
-    "identity": "Alchyr.Sts2Mod",
-    "shortName": "alchyrsts2mod",
+    "author": "Niya",
+    "name": "NoTimeToDie",
+    "description": "Slay the Spire 2 speed control mod with in-game GUI",
+    "identity": "Niya.NoTimeToDie",
+    "shortName": "notimetodie",
     "tags": {
         "language": "C#",
         "type": "project"
     },
-    "sourceName": "ModTemplate",
+    "sourceName": "NoTimeToDie",
     "sources": [
         {
             "modifiers":[
