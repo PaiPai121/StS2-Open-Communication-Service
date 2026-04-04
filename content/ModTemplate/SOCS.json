@@ -1,0 +1,10 @@
+{
+  "id": "SOCS",
+  "name": "StS2 Open Communication Service",
+  "author": "Niya",
+  "description": "Local TCP communication mod for Slay the Spire 2 automation and tooling",
+  "version": "v1.0.0",
+  "has_pck": false,
+  "has_dll": true,
+  "affects_gameplay": true
+}

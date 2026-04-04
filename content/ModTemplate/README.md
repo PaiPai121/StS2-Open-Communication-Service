@@ -1,1 +1,1 @@
-NoTimeToDie — a Slay the Spire 2 speed control mod with in-game GUI.
+SOCS — StS2 Open Communication Service, a local TCP communication mod template for automation and tooling.

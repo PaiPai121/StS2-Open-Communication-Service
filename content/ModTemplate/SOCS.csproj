@@ -74,15 +74,15 @@
         <PackageReference Include="Alchyr.Sts2.BaseLib" Version="*" PrivateAssets="All" />
         <PackageReference Include="Krafs.Publicizer" Version="2.3.0" PrivateAssets="All"/>
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*" />
-        <AdditionalFiles Include="NoTimeToDie/localization/**/*.json"/> <!-- Used by analyzer -->
+        <AdditionalFiles Include="SOCS/localization/**/*.json"/> <!-- Used by analyzer -->
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Remove="NoTimeToDie/**" />
+        <Compile Remove="SOCS/**" />
         <Compile Remove="materials/**" />
         <Compile Remove="shaders/**" />
         <Compile Remove="images/**" />
-        <EmbeddedResource Remove="NoTimeToDie/**" />
+        <EmbeddedResource Remove="SOCS/**" />
         <EmbeddedResource Remove="materials/**" />
         <EmbeddedResource Remove="shaders/**" />
         <EmbeddedResource Remove="images/**" />
@@ -90,9 +90,9 @@
 
     <ItemGroup>
         <None Include=".gitignore" />
-        <None Include="NoTimeToDie.json" />
+        <None Include="SOCS.json" />
         <None Include="project.godot"/>
-        <None Include="NoTimeToDie/**" />
+        <None Include="SOCS/**" />
     </ItemGroup>
     
     <ItemGroup>
@@ -116,7 +116,7 @@
     <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent">
         <Message Text="Copying .dll and manifest to mods folder." Importance="high" />
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
-        <Copy SourceFiles="NoTimeToDie.json" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
+        <Copy SourceFiles="SOCS.json" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
     </Target>
 
     <Target Name="GodotPublish" AfterTargets="Publish" Condition="'$(GodotPath)' != '' and Exists('$(GodotPath)') and '$(IsInnerGodotExport)' != 'true'">
