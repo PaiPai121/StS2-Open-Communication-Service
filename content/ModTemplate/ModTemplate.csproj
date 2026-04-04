@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>true</ImplicitUsings>
-        <Nullable>{NullableChecks}</Nullable> <!--Makes code analysis regarding null values stricter.-->
+        <Nullable>enable</Nullable> <!--Makes code analysis regarding null values stricter.-->
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <DefaultItemExcludes>packages/**</DefaultItemExcludes>
         <AppOutputBase>$(MSBuildProjectDirectory)\</AppOutputBase>
@@ -23,15 +23,10 @@
 
     <!-- Windows -->
     <PropertyGroup Condition="'$(IsWindows)' == 'true'">
-        <AutoSteamPath>$(registry:HKEY_CURRENT_USER\Software\Valve\Steam@SteamPath)\steamapps</AutoSteamPath>
-        <SteamLibraryPath Condition="Exists('$(AutoSteamPath)/common/Slay the Spire 2')">$(AutoSteamPath)</SteamLibraryPath>
-
-        <GodotPath>C:/megadot/MegaDot_v4.5.1-stable_mono_win64.exe</GodotPath>
-        <!-- If on Windows and Slay the Spire 2 is not installed in your default steam library, adjust the following.-->
-        <SteamLibraryPath Condition="'$(SteamLibraryPath)' == ''">C:/Program Files (x86)/Steam/steamapps</SteamLibraryPath>
-
-        <!-- The below should not need to be changed. -->
-        <Sts2Path>$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
+        <GodotPath>D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe</GodotPath>
+        
+        <Sts2Path>C:/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2</Sts2Path>
+        
         <ModsPath>$(Sts2Path)/mods/</ModsPath>
         <Sts2DataDir>$(Sts2Path)/data_sts2_windows_x86_64</Sts2DataDir>
     </PropertyGroup>
@@ -61,7 +56,7 @@
     <PropertyGroup>
         <!-- Diasble architecture mismatch warning; mods are ideally built for all platforms (MSIL)
              while your local StS2 version will be for your specific platform. -->
-        <NoWarn>$(NoWarn);MSB3270</NoWarn> 
+        <NoWarn>$(NoWarn);MSB3270</NoWarn>
     </PropertyGroup>
 
     <ItemGroup Condition="Exists('$(Sts2DataDir)')" >
@@ -73,10 +68,6 @@
             <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
             <Private>false</Private>
         </Reference>
-    </ItemGroup>
-    
-    <ItemGroup Condition="{PublicizeSts}"> <!--Allows private/protected field references but may cause errors.-->
-        <Publicize Include="sts2" IncludeVirtualMembers="false" IncludeCompilerGeneratedMembers="false" />
     </ItemGroup>
 
     <ItemGroup>
@@ -104,6 +95,15 @@
         <None Include="ModTemplate/**" />
     </ItemGroup>
     
+    <ItemGroup>
+        <Reference Include="SlayTheSpire2">
+            <HintPath>..\..\lib\sts2.dll</HintPath>
+        </Reference>
+        <Reference Include="0Harmony">
+            <HintPath>..\..\lib\0Harmony.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
     <Target Name="CheckDependencyPaths" >
         <Error
                 Text=" Slay the Spire 2 data not found at path '$(Sts2DataDir)'"

@@ -32,8 +32,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="" />
-    <None Include="bin\**" />
+    <Reference Include="SlayTheSpire2">
+      <HintPath>libs\SlayTheSpire2.dll</HintPath>
+      </Reference>
+    
+    <Reference Include="0Harmony">
+      <HintPath>libs\0Harmony.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

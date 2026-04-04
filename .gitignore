@@ -3,3 +3,6 @@ dotnet pack in this folder
 .vs/
 bin/
 obj/
+
+# 忽略 Claude Code 的本地缓存和工作树
+.claude/

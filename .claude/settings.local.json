@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(C:/Program Files \\(x86\\)/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.exe:*)",
+      "Bash(python:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(powershell:*)",
+      "Bash(start:*)",
+      "Bash(cmd /c tasklist)",
+      "Bash(findstr /I \"steam SlayTheSpire2 godot\")",
+      "WebFetch(domain:alchyr.github.io)",
+      "Bash(cmd.exe:*)",
+      "Bash(C:/Program Files \\(x86\\)/Steam/steam.exe:*)",
+      "Bash(tasklist)",
+      "Bash(findstr /I \"SlayTheSpire2.exe steam.exe\")",
+      "Bash(tasklist:*)",
+      "Bash(findstr /I SlayTheSpire2.exe)",
+      "Bash(findstr /I /C:\"SlayTheSpire2.exe\" /C:\"steam.exe\")",
+      "Bash(taskkill:*)",
+      "Bash(where strings:*)"
+    ]
+  }
+}
