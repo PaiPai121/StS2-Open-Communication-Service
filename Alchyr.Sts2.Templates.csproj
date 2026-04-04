@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageId>Alchyr.Sts2.Templates</PackageId>
-    <PackageVersion>2.2.4</PackageVersion>
-    <Title>Sts2 Mod Templates</Title>
-    <Authors>Alchyr</Authors>
-    <Description>Templates to use when creating a Slay the Spire 2 mod</Description>
-    <PackageTags>dotnet-new;templates;</PackageTags>
-    <PackageProjectUrl>https://github.com/Alchyr/ModTemplate-StS2/</PackageProjectUrl>
-    <PackageReleaseNotes>remove baselib copying; too many issues</PackageReleaseNotes>
+    <PackageId>Niya.Sts2.Templates</PackageId>
+    <PackageVersion>0.1.0</PackageVersion>
+    <Title>Niya's StS2 Templates</Title>
+    <Authors>Niya</Authors>
+    <Description>dotnet-new templates for Slay the Spire 2 mods (forked from Alchyr/ModTemplate-StS2)</Description>
+    <PackageTags>dotnet-new;templates;slay-the-spire-2;sts2;modding;</PackageTags>
+    <PackageProjectUrl>https://github.com/PaiPai121/StS2-NoTimeToDie</PackageProjectUrl>
+    <PackageReleaseNotes>Fork template repo and customize NoTimeToDie template.</PackageReleaseNotes>
     
     <PackageType>Template</PackageType>
     <TargetFramework>net9.0</TargetFramework>
@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="content\ModTemplate\ModTemplateCode\Placeholder.cs" />
+    <Compile Include="content\ModTemplate\NoTimeToDieCode\MainFile.cs" />
     <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**;content\**\packages\**;content\**\.idea\**;content\**\.git\**" />
     <Compile Remove="**\*" />
   </ItemGroup>

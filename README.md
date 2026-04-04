@@ -1,11 +1,17 @@
-Contains 3 templates.
+# StS2 Templates (Niya fork)
 
-Slay the Spire 2 Mod - Sets up an empty mod with BaseLib as a dependency. If you don't need it, remove it from the csproj and mod manifest json.
+This repository is a fork of the original template repo:
+- https://github.com/Alchyr/ModTemplate-StS2
 
-Slay the Spire 2 Content - Sets up a content mod.
+It is used as the base for the **NoTimeToDie** mod project template.
 
-Slay the Spire 2 Character - Sets up a character mod.
+## Templates included
+- **NoTimeToDie** (mod template) — speed control mod with in-game GUI
+- **Slay the Spire 2 Content** — content mod template
+- **Slay the Spire 2 Character** — character mod template
 
-When creating a solution using these templates, make sure to enable "Put solution and project in same directory". This is required for it to work as-is with Godot.
+## Usage
+When creating a solution using these templates, enable **"Put solution and project in same directory"** (required for Godot as-is).
 
-See [wiki](https://github.com/Alchyr/ModTemplate-StS2/wiki/Setup) for additional details.
+## Notes / Credits
+All credit for the original template structure goes to Alchyr and contributors. This fork customizes the identifiers and the mod template content.
