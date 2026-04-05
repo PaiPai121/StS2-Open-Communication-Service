@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="content\ModTemplate\NoTimeToDieCode\MainFile.cs" />
+    <Compile Include="content\ModTemplate\SOCSCode\MainFile.cs" />
     <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**;content\**\packages\**;content\**\.idea\**;content\**\.git\**" />
     <Compile Remove="**\*" />
   </ItemGroup>

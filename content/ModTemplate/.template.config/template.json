@@ -1,14 +1,14 @@
 {
     "author": "Niya",
-    "name": "NoTimeToDie",
-    "description": "Slay the Spire 2 speed control mod with in-game GUI",
-    "identity": "Niya.NoTimeToDie",
-    "shortName": "notimetodie",
+    "name": "SOCS",
+    "description": "StS2 Open Communication Service template for local TCP automation mods",
+    "identity": "Niya.SOCS",
+    "shortName": "socs",
     "tags": {
         "language": "C#",
         "type": "project"
     },
-    "sourceName": "NoTimeToDie",
+    "sourceName": "SOCS",
     "sources": [
         {
             "modifiers":[

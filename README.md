@@ -15,3 +15,7 @@ When creating a solution using these templates, enable **"Put solution and proje
 
 ## Notes / Credits
 All credit for the original template structure goes to Alchyr and contributors. This fork customizes the identifiers and the mod template content.
+
+## 游戏的打开和关闭方式
+打开游戏：start steam://run/2868840
+关闭游戏：taskkill /f /im SlayTheSpire2.exe
