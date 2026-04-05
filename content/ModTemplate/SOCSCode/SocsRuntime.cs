@@ -266,6 +266,7 @@ internal static class SocsRuntime
     private static bool _initialized;
     private static long _sequence;
     private static ulong _lastSnapshotFrame;
+    private static int _completedSnapshotBuildCount;
     private static float _targetTimeScale = SocsConstants.DefaultTimeScale;
     private static string _lastActionStatus = SocsActionStatus.None;
     private static object? _cachedSingleton;
@@ -1157,9 +1158,14 @@ internal static class SocsRuntime
             => new(commandName, false, message, payload, false);
     }
 
+    private static bool HasConnectedClients()
+    {
+        return _server?.HasClients == true;
+    }
+
     private static void BroadcastSnapshotIfNeeded()
     {
-        if (_server == null || !_server.HasClients)
+        if (!HasConnectedClients())
         {
             return;
         }
@@ -1170,17 +1176,26 @@ internal static class SocsRuntime
             return;
         }
 
-        _lastSnapshotFrame = currentFrame;
-        var snapshot = new SocsSnapshotEnvelope
+        try
         {
-            Seq = Interlocked.Increment(ref _sequence),
-            Frame = currentFrame,
-            TimestampUnixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            Data = BuildSnapshot()
-        };
+            var snapshot = new SocsSnapshotEnvelope
+            {
+                Seq = Interlocked.Increment(ref _sequence),
+                Frame = currentFrame,
+                TimestampUnixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                Data = BuildSnapshot()
+            };
 
-        byte[] payload = SocsProtocol.Serialize(snapshot);
-        _server.Broadcast(payload);
+            byte[] payload = SocsProtocol.Serialize(snapshot);
+            _server.Broadcast(payload);
+            _completedSnapshotBuildCount++;
+            _lastSnapshotFrame = currentFrame;
+        }
+        catch (Exception ex)
+        {
+            _lastExceptionSummary = ex.ToString();
+            GD.PushWarning($"SOCS snapshot broadcast failed: {ex.Message}");
+        }
     }
 
     private static GameStateSnapshot BuildSnapshot()
@@ -1632,7 +1647,7 @@ internal static class SocsRuntime
 
     private static SnapshotProbeContext BuildProbeContext()
     {
-        object[] roots = EnumerateDiscoveryRoots().ToArray();
+        object[] roots = BuildPriorityRoots();
         object? run = FindPriorityObject(roots, RunMemberNames);
         object? playerManager = FindPriorityObject(roots, PlayerManagerMemberNames);
         object? player = FindPlayerProbe(run, playerManager, roots);
@@ -1642,6 +1657,57 @@ internal static class SocsRuntime
         object? proceed = FindPriorityObject(roots, ProceedScreenNames);
 
         return new SnapshotProbeContext(roots, run, playerManager, player, combat, shop, eventState, proceed);
+    }
+
+    private static object[] BuildPriorityRoots()
+    {
+        var roots = new List<object>();
+        var seen = new HashSet<int>();
+
+        void AddRoot(object? candidate)
+        {
+            if (candidate == null || !ShouldTraverse(candidate))
+            {
+                return;
+            }
+
+            int identity = RuntimeHelpers.GetHashCode(candidate);
+            if (seen.Add(identity))
+            {
+                roots.Add(candidate);
+            }
+        }
+
+        AddRoot(_cachedSingleton);
+
+        if (Engine.GetMainLoop() is SceneTree tree && tree.Root != null)
+        {
+            foreach (Node child in tree.Root.GetChildren())
+            {
+                if (!ContainsAnyKeyword(child.Name, RootMemberNames) && !ContainsAnyKeyword(child.GetType().FullName, RootMemberNames))
+                {
+                    continue;
+                }
+
+                AddRoot(child);
+                foreach (object? direct in EnumerateRootMembers(child))
+                {
+                    AddRoot(direct);
+                }
+            }
+        }
+
+        if (roots.Count == 0)
+        {
+            object? singleton = FindStaticSingletonCandidate();
+            if (singleton != null)
+            {
+                _cachedSingleton = singleton;
+                AddRoot(singleton);
+            }
+        }
+
+        return roots.ToArray();
     }
 
     private static object? FindCombatSource(SnapshotProbeContext context)
@@ -1775,24 +1841,38 @@ internal static class SocsRuntime
             return true;
         }
 
-        if (BuildHandSnapshot(context).Count > 0)
+        foreach (object candidate in EnumerateProbeCandidates(context))
         {
-            return true;
+            if (TryFindMemberShallow(candidate, EnemyCollectionMemberNames) != null
+                || TryFindMemberShallow(candidate, HandParentNames) != null
+                || TryFindMemberShallow(candidate, DrawPileNames) != null
+                || TryFindMemberShallow(candidate, DiscardPileNames) != null
+                || TryFindMemberShallow(candidate, ExhaustPileNames) != null)
+            {
+                return true;
+            }
+
+            if (TryReadIntByNames(candidate, EnergyMemberNames).HasValue)
+            {
+                return true;
+            }
+
+            foreach (string containerName in EnergyContainerNames)
+            {
+                object? container = TryReadMember(candidate, containerName);
+                if (container != null && TryReadIntByNames(container, EnergyMemberNames).HasValue)
+                {
+                    return true;
+                }
+            }
         }
 
-        if (BuildZoneSnapshot(context, "drawPile", DrawPileNames, MaxPlausibleZoneCards).Count > 0
-            || BuildZoneSnapshot(context, "discardPile", DiscardPileNames, MaxPlausibleZoneCards).Count > 0
-            || BuildZoneSnapshot(context, "exhaustPile", ExhaustPileNames, MaxPlausibleZoneCards).Count > 0)
-        {
-            return true;
-        }
+        return false;
+    }
 
-        if (ProbePlayerEnergy(context).HasValue)
-        {
-            return true;
-        }
-
-        return FindCombatSource(context) != null;
+    private static bool CanUseHeavySnapshotFallbacks()
+    {
+        return _completedSnapshotBuildCount > 0;
     }
 
     private static int? ProbeSnapshotInt(SnapshotProbeContext context, string cacheKey, string[] memberNames)
@@ -1800,6 +1880,11 @@ internal static class SocsRuntime
         if (TryReadIntFromContext(context, memberNames, out int directValue))
         {
             return directValue;
+        }
+
+        if (!CanUseHeavySnapshotFallbacks())
+        {
+            return null;
         }
 
         int? cachedValue = TryGetCachedInt(cacheKey);
@@ -1892,6 +1977,11 @@ internal static class SocsRuntime
             }
         }
 
+        if (!CanUseHeavySnapshotFallbacks())
+        {
+            return null;
+        }
+
         int? cachedValue = TryGetCachedInt("playerEnergy");
         if (cachedValue.HasValue)
         {
@@ -1925,6 +2015,11 @@ internal static class SocsRuntime
             {
                 return graphValue;
             }
+        }
+
+        if (!CanUseHeavySnapshotFallbacks())
+        {
+            return null;
         }
 
         int? cachedValue = TryGetCachedInt("playerBlock");
@@ -2538,6 +2633,11 @@ internal static class SocsRuntime
     private static bool TryGetZoneSnapshotFromDiscovery(string cacheKey, out List<SocsHandCardSnapshot> snapshot)
     {
         snapshot = [];
+        if (!HasConnectedClients())
+        {
+            return false;
+        }
+
         EnsureDiscoveryCache();
         return TryGetCachedZoneSnapshot(cacheKey, out snapshot);
     }
@@ -2643,18 +2743,24 @@ internal static class SocsRuntime
         int index = 0;
         foreach (object? card in cards)
         {
-            if (card == null || !LooksLikeCard(card))
+            if (card == null)
             {
                 return false;
             }
 
-            snapshot.Add(BuildCardSnapshot(card, index++));
+            object? semanticCard = ResolveCardSemanticRoot(card);
+            if (semanticCard == null)
+            {
+                return false;
+            }
+
+            snapshot.Add(BuildCardSnapshot(card, semanticCard, index++));
         }
 
         return true;
     }
 
-    private static SocsHandCardSnapshot BuildCardSnapshot(object card, int index)
+    private static SocsHandCardSnapshot BuildCardSnapshot(object rawCard, object card, int index)
     {
         var snapshot = new SocsHandCardSnapshot
         {
@@ -2666,13 +2772,82 @@ internal static class SocsRuntime
             Targeting = NormalizeTargeting(card)
         };
 
-        LogCardProbeDiagnostics(card, snapshot, index);
+        LogCardProbeDiagnostics(rawCard, card, snapshot, index);
         TryAssignField($"combat.hand[{index}].upgraded", () => snapshot.Upgraded = TryReadBoolByNames(card, out bool upgraded, UpgradeMemberNames) ? upgraded : null);
         TryAssignField($"combat.hand[{index}].type", () => snapshot.Type = NormalizeCardType(card));
         TryAssignField($"combat.hand[{index}].baseDamage", () => snapshot.BaseDamage = TryReadIntByNames(card, DamageMemberNames));
         TryAssignField($"combat.hand[{index}].baseBlock", () => snapshot.BaseBlock = TryReadIntByNames(card, BlockMemberNames));
         TryAssignField($"combat.hand[{index}].description", () => snapshot.Description = TryReadStringByNames(card, DescriptionMemberNames));
         return snapshot;
+    }
+
+    private static object? ResolveCardSemanticRoot(object source)
+    {
+        object? best = null;
+        int bestScore = int.MinValue;
+
+        void ConsiderCandidate(object candidate)
+        {
+            if (!LooksLikeCard(candidate))
+            {
+                return;
+            }
+
+            int score = ScoreCardSemanticCandidate(candidate);
+            if (score > bestScore)
+            {
+                best = candidate;
+                bestScore = score;
+            }
+        }
+
+        foreach (object candidate in EnumerateShallowProbeObjects(source))
+        {
+            ConsiderCandidate(candidate);
+        }
+
+        return best;
+    }
+
+    private static int ScoreCardSemanticCandidate(object card)
+    {
+        int score = 0;
+        if (ContainsAnyKeyword(card.GetType().Name, CardTypeKeywords) || ContainsAnyKeyword(card.GetType().FullName, CardTypeKeywords))
+        {
+            score += 8;
+        }
+
+        if (!string.IsNullOrWhiteSpace(TryReadStringByNames(card, CardNameMembers)))
+        {
+            score += 6;
+        }
+
+        if (!string.IsNullOrWhiteSpace(TryReadStringByNames(card, CardIdMembers)))
+        {
+            score += 4;
+        }
+
+        if (TryReadIntByNames(card, CurrentCostMemberNames).HasValue || TryReadIntByNames(card, CostMemberNames).HasValue)
+        {
+            score += 4;
+        }
+
+        if (TryFindMemberShallow(card, CardTypeMemberNames) != null)
+        {
+            score += 2;
+        }
+
+        if (TryFindMemberShallow(card, TargetTypeMemberNames) != null || TryFindMemberShallow(card, ["Targeting", "targeting", "TargetMode", "targetMode"]) != null)
+        {
+            score += 2;
+        }
+
+        if (TryReadBoolByNames(card, out _, PlayableMemberNames))
+        {
+            score += 1;
+        }
+
+        return score;
     }
 
     private static int? ProbeCardEnergyCost(object card)
@@ -2953,7 +3128,7 @@ internal static class SocsRuntime
             TryAssignField($"combat.enemies[{enemyIndex}].intentDamage", () => snapshot.IntentDamage = ProbeEnemyIntentDamage(context, enemy));
             TryAssignField($"combat.enemies[{enemyIndex}].intentMulti", () => snapshot.IntentMulti = ProbeEnemyIntentMulti(context, enemy));
             TryAssignField($"combat.enemies[{enemyIndex}].powers", () => snapshot.Powers = ProbeEnemyPowers(context, enemy));
-            LogEnemyProbeDiagnostics(context, enemy, snapshot, enemyIndex);
+            LogEnemyProbeDiagnostics(context, item, enemy, snapshot, enemyIndex);
             enemies.Add(snapshot);
         }
 
@@ -2962,10 +3137,31 @@ internal static class SocsRuntime
 
     private static bool IsAcceptedEnemySource(object source)
     {
-        return TryBuildEnemySnapshots(BuildProbeContext(), source, out List<SocsEnemySnapshot> enemies, out int totalCount)
-            && totalCount > 0
-            && enemies.Count > 0
-            && enemies.Count <= MaxPlausibleOptions * 2;
+        int totalCount = 0;
+        int recognizedCount = 0;
+        var seen = new HashSet<int>();
+
+        foreach (object? item in EnumerateObjects(source))
+        {
+            if (item == null)
+            {
+                continue;
+            }
+
+            totalCount++;
+            if (!TryYieldEnemyCandidate(item, seen, out _))
+            {
+                continue;
+            }
+
+            recognizedCount++;
+            if (recognizedCount > MaxPlausibleOptions * 2)
+            {
+                return false;
+            }
+        }
+
+        return totalCount > 0 && recognizedCount > 0;
     }
 
     private static bool TryResolveEnemySourceFromPath(SocsMemberPath path, SnapshotProbeContext context, out object? value)
@@ -3022,6 +3218,11 @@ internal static class SocsRuntime
     private static bool TryGetEnemySnapshotFromDiscovery(SnapshotProbeContext context, out List<SocsEnemySnapshot> snapshot)
     {
         snapshot = [];
+        if (!HasConnectedClients())
+        {
+            return false;
+        }
+
         EnsureDiscoveryCache();
         return TryGetCachedEnemySnapshot(context, out snapshot);
     }
@@ -3076,25 +3277,81 @@ internal static class SocsRuntime
 
     private static bool TryYieldEnemyCandidate(object source, HashSet<int> seen, out object? candidate)
     {
-        foreach (object probe in EnumerateShallowProbeObjects(source))
+        object? semanticEnemy = ResolveEnemySemanticRoot(source);
+        if (semanticEnemy == null)
         {
-            if (!LooksLikeEnemy(probe))
-            {
-                continue;
-            }
-
-            int identity = RuntimeHelpers.GetHashCode(probe);
-            if (!seen.Add(identity))
-            {
-                continue;
-            }
-
-            candidate = probe;
-            return true;
+            candidate = null;
+            return false;
         }
 
-        candidate = null;
-        return false;
+        int identity = RuntimeHelpers.GetHashCode(semanticEnemy);
+        if (!seen.Add(identity))
+        {
+            candidate = null;
+            return false;
+        }
+
+        candidate = semanticEnemy;
+        return true;
+    }
+
+    private static object? ResolveEnemySemanticRoot(object source)
+    {
+        object? best = null;
+        int bestScore = int.MinValue;
+
+        void ConsiderCandidate(object candidate)
+        {
+            if (!LooksLikeEnemy(candidate))
+            {
+                return;
+            }
+
+            int score = ScoreEnemySemanticCandidate(candidate);
+            if (score > bestScore)
+            {
+                best = candidate;
+                bestScore = score;
+            }
+        }
+
+        foreach (object candidate in EnumerateShallowProbeObjects(source))
+        {
+            ConsiderCandidate(candidate);
+        }
+
+        return best;
+    }
+
+    private static int ScoreEnemySemanticCandidate(object enemy)
+    {
+        int score = 0;
+        if (ContainsAnyKeyword(enemy.GetType().Name, EnemyTypeKeywords) || ContainsAnyKeyword(enemy.GetType().FullName, EnemyTypeKeywords))
+        {
+            score += 8;
+        }
+
+        if (TryReadIntByNames(enemy, "CurrentHealth", "CurrentHp", "Health", "Hp").HasValue)
+        {
+            score += 6;
+        }
+
+        if (!string.IsNullOrWhiteSpace(TryReadStringByNames(enemy, EnemyNameMembers)))
+        {
+            score += 4;
+        }
+
+        if (TryResolveIntentCarrier(enemy) != null)
+        {
+            score += 4;
+        }
+
+        if (BuildPowersSnapshot(enemy).Count > 0)
+        {
+            score += 2;
+        }
+
+        return score;
     }
 
     private static bool LooksLikeEnemyCandidate(object value)
@@ -4693,7 +4950,7 @@ internal static class SocsRuntime
         return TryConvertToInt(rawValue, out value);
     }
 
-    private static void LogCardProbeDiagnostics(object card, SocsHandCardSnapshot snapshot, int index)
+    private static void LogCardProbeDiagnostics(object rawCard, object card, SocsHandCardSnapshot snapshot, int index)
     {
         if (_currentCardProbeDiagnosticFrame != _framesSinceInit)
         {
@@ -4708,17 +4965,17 @@ internal static class SocsRuntime
         }
 
         _cardProbeDiagnosticCount++;
-        string wrappers = DescribeShallowProbeObjects(card);
+        string wrappers = DescribeShallowProbeObjects(rawCard);
         string currentCosts = DescribeNamedValues(card, CurrentCostMemberNames);
         string baseCosts = DescribeNamedValues(card, CostMemberNames);
-        GD.Print($"{SocsDiagPrefix} card[{index}] type={card.GetType().FullName} name={snapshot.Name ?? "<null>"} energy={snapshot.EnergyCost?.ToString(CultureInfo.InvariantCulture) ?? "<null>"} wrappers={wrappers} current={currentCosts} base={baseCosts}");
+        GD.Print($"{SocsDiagPrefix} card[{index}] raw={rawCard.GetType().FullName} resolved={card.GetType().FullName} name={snapshot.Name ?? "<null>"} energy={snapshot.EnergyCost?.ToString(CultureInfo.InvariantCulture) ?? "<null>"} wrappers={wrappers} current={currentCosts} base={baseCosts}");
         if (_cardProbeDiagnosticCount >= MaxPlausibleHandCards)
         {
             _cardProbeDiagnosticsLogged = true;
         }
     }
 
-    private static void LogEnemyProbeDiagnostics(SnapshotProbeContext context, object enemy, SocsEnemySnapshot snapshot, int index)
+    private static void LogEnemyProbeDiagnostics(SnapshotProbeContext context, object rawEnemy, object enemy, SocsEnemySnapshot snapshot, int index)
     {
         if (_currentEnemyProbeDiagnosticFrame != _framesSinceInit)
         {
@@ -4739,7 +4996,7 @@ internal static class SocsRuntime
         string enemyNames = DescribeNamedValues(enemy, EnemyNameMembers);
         string ownerNames = owner == null ? "<null>" : DescribeNamedValues(owner, EnemyNameMembers);
         string carrierIntent = carrier == null ? "<null>" : DescribeNamedValues(carrier, IntentTypeMemberNames, IntentDamageMemberNames, IntentMultiMemberNames);
-        GD.Print($"{SocsDiagPrefix} enemy[{index}] type={enemy.GetType().FullName} owner={owner?.GetType().FullName ?? "<null>"} carrier={carrier?.GetType().FullName ?? "<null>"} name={snapshot.Name} hp={snapshot.Hp?.ToString(CultureInfo.InvariantCulture) ?? "<null>"} names={enemyNames} ownerNames={ownerNames} intent={carrierIntent}");
+        GD.Print($"{SocsDiagPrefix} enemy[{index}] raw={rawEnemy.GetType().FullName} resolved={enemy.GetType().FullName} owner={owner?.GetType().FullName ?? "<null>"} carrier={carrier?.GetType().FullName ?? "<null>"} name={snapshot.Name} hp={snapshot.Hp?.ToString(CultureInfo.InvariantCulture) ?? "<null>"} names={enemyNames} ownerNames={ownerNames} intent={carrierIntent}");
         if (_enemyProbeDiagnosticCount >= maxEnemyDiagnostics)
         {
             _enemyProbeDiagnosticsLogged = true;
