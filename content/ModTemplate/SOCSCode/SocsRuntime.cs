@@ -21,16 +21,55 @@ internal static class SocsRuntime
 
     private static readonly ConcurrentQueue<SocsPendingCommand> PendingCommands = new();
     private static readonly BindingFlags ReflectionFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+    private static readonly string[] RunMemberNames = ["Run", "CurrentRun", "_run", "run", "SerializableRun", "CurrentGameRun"];
+    private static readonly string[] PlayerManagerMemberNames = ["PlayerManager", "_playerManager", "playerManager", "Party", "Players", "PlayersManager"];
+    private static readonly string[] CombatMemberNames = ["Combat", "CurrentCombat", "Battle", "CurrentBattle", "Encounter", "Room", "CurrentRoom"];
     private static readonly string[] RootMemberNames = ["Run", "Game", "Dungeon", "AbstractDungeon", "Battle", "Combat"];
     private static readonly string[] DungeonSingletonKeywords = ["Dungeon", "Game", "Battle", "Combat", "Run"];
     private static readonly string[] DiscoveryMemberKeywords = ["Run", "Player", "Dungeon", "State", "Combat", "Screen", "Room", "Battle", "Hand", "Card"];
     private static readonly string[] StaticSingletonMemberNames = ["Instance", "Current", "CurrentRun", "CurrentState", "CurrentDungeon", "SharedInstance", "_instance", "s_instance"];
-    private static readonly string[] HandParentNames = ["Hand", "hand", "HandGroup", "CardsInHand", "CardsInHandGroup", "HandCards", "cardsInHand", "Cards", "cards"];
+    private static readonly string[] HandParentNames = ["Hand", "hand", "HandGroup", "CardsInHand", "CardsInHandGroup", "HandCards", "cardsInHand"];
+    private static readonly string[] DrawPileNames = ["DrawPile", "drawPile", "Draw", "draw", "Deck", "deck", "DrawDeck", "drawDeck"];
+    private static readonly string[] DiscardPileNames = ["DiscardPile", "discardPile", "Discard", "discard", "DiscardDeck", "discardDeck"];
+    private static readonly string[] ExhaustPileNames = ["ExhaustPile", "exhaustPile", "Exhaust", "exhaust", "Exhausted", "exhausted", "RemovedFromCombat", "removedFromCombat"];
     private static readonly string[] PlayerParentNames = ["Player", "player", "Hero", "hero", "Character", "character"];
-    private static readonly string[] TraceTerminalNames = ["Run", "CurrentRun", "Combat", "Battle", "Player", "Hero", "Character", "Hand", "HandGroup", "CardsInHand", "Cards", "CurrentHealth", "CurrentHp", "Health", "Hp", "Gold", "gold", "Floor", "floor", "CurrentFloor", "ActFloor"];
-    private const int TraceLogLimit = 192;
     private static readonly string[] CardNameMembers = ["Name", "name", "CardName", "DisplayName", "Title", "title"];
     private static readonly string[] CardIdMembers = ["Uuid", "UUID", "Guid", "guid", "Id", "id", "InstanceId", "instanceId"];
+    private static readonly string[] CollectionCountMembers = ["Count", "count", "Length", "length", "Size", "size"];
+    private static readonly string[] CardTypeKeywords = ["Card"];
+    private static readonly string[] EnemyTypeKeywords = ["Enemy", "Monster", "Creature", "Opponent"];
+    private static readonly string[] ZoneMemberKeywords = ["Hand", "Draw", "Deck", "Discard", "Exhaust", "Pile"];
+    private static readonly string[] EnergyMemberNames = ["Energy", "energy", "CurrentEnergy", "currentEnergy", "EnergyCount", "energyCount"];
+    private static readonly string[] EnergyContainerNames = ["EnergyManager", "energyManager", "EnergyPanel", "energyPanel", "Mana", "mana"];
+    private static readonly string[] BlockMemberNames = ["Block", "block", "CurrentBlock", "currentBlock", "Armor", "armor"];
+    private static readonly string[] EnemyCollectionMemberNames = ["Enemies", "enemies", "Monsters", "monsters", "Creatures", "creatures", "Combatants", "combatants", "Opponents", "opponents"];
+    private static readonly string[] AliveMemberNames = ["Alive", "alive", "IsAlive", "isAlive", "Dead", "dead", "IsDead", "isDead"];
+    private static readonly string[] PlayableMemberNames = ["Playable", "playable", "IsPlayable", "isPlayable", "CanPlay", "canPlay", "CanUse", "canUse", "CanCast", "canCast"];
+    private static readonly string[] CostMemberNames = ["Cost", "cost", "EnergyCost", "energyCost", "ManaCost", "manaCost", "BaseCost", "baseCost"];
+    private static readonly string[] UpgradeMemberNames = ["Upgraded", "upgraded", "IsUpgraded", "isUpgraded", "UpgradedThisCombat", "upgradedThisCombat"];
+    private static readonly string[] CardTypeMemberNames = ["Type", "type", "CardType", "cardType"];
+    private static readonly string[] DamageMemberNames = ["BaseDamage", "baseDamage", "Damage", "damage", "DisplayedDamage", "displayedDamage"];
+    private static readonly string[] DescriptionMemberNames = ["Description", "description", "RawDescription", "rawDescription", "Text", "text", "Body", "body"];
+    private static readonly string[] PowerCollectionMemberNames = ["Powers", "powers", "Statuses", "statuses", "Buffs", "buffs", "Debuffs", "debuffs", "Effects", "effects"];
+    private static readonly string[] PowerIdMemberNames = ["Id", "id", "PowerId", "powerId", "Name", "name", "Key", "key"];
+    private static readonly string[] PowerAmountMemberNames = ["Amount", "amount", "Stacks", "stacks", "Count", "count", "Value", "value"];
+    private static readonly string[] IntentTypeMemberNames = ["Intent", "intent", "IntentType", "intentType", "MoveType", "moveType", "MoveIntent", "moveIntent"];
+    private static readonly string[] IntentDamageMemberNames = ["IntentDamage", "intentDamage", "MoveDamage", "moveDamage", "Damage", "damage", "IntentDmg", "intentDmg"];
+    private static readonly string[] IntentMultiMemberNames = ["IntentMulti", "intentMulti", "MultiCount", "multiCount", "HitCount", "hitCount", "Multiplier", "multiplier"];
+    private static readonly string[] TargetTypeMemberNames = ["Target", "target", "TargetType", "targetType", "RequiresTarget", "requiresTarget", "NeedTarget", "needTarget"];
+    private static readonly string[] ShopScreenNames = ["Shop", "ShopScreen", "Merchant", "MerchantScreen", "Store", "StoreScreen"];
+    private static readonly string[] EventScreenNames = ["Event", "EventScreen", "CurrentEvent", "MapEvent"];
+    private static readonly string[] ShopItemsMemberNames = ["Items", "items", "ShopItems", "shopItems", "Cards", "cards", "Relics", "relics", "Potions", "potions", "Products", "products"];
+    private static readonly string[] OptionCollectionMemberNames = ["Options", "options", "Choices", "choices", "Buttons", "buttons", "Responses", "responses"];
+    private static readonly string[] OptionLabelMemberNames = ["Label", "label", "Text", "text", "Title", "title", "Name", "name", "Description", "description"];
+    private static readonly string[] LeaveOptionMemberNames = ["Leave", "leave", "LeaveOption", "leaveOption", "Cancel", "cancel", "Exit", "exit"];
+    private static readonly string[] PriceMemberNames = ["Price", "price", "Cost", "cost", "GoldCost", "goldCost"];
+    private static readonly string[] BoolStateMemberNames = ["Enabled", "enabled", "IsEnabled", "isEnabled", "Interactable", "interactable", "Selectable", "selectable", "Available", "available"];
+    private static readonly string[] RelicCollectionMemberNames = ["Relics", "relics", "PassiveItems", "passiveItems", "Artifacts", "artifacts"];
+    private const int MaxPlausibleHandCards = 20;
+    private const int MaxPlausibleZoneCards = 200;
+    private const int MaxPlausibleShopItems = 64;
+    private const int MaxPlausibleOptions = 16;
 
     private static SocsServer? _server;
     private static bool _initialized;
@@ -234,18 +273,1200 @@ internal static class SocsRuntime
 
     private static GameStateSnapshot BuildSnapshot()
     {
-        EnsureDiscoveryCache();
-
         var snapshot = new GameStateSnapshot();
+        SnapshotProbeContext context = BuildProbeContext();
+        string screen = DetectScreen(context);
 
-        TryAssignField("hp", () => snapshot.Hp = TryGetCachedInt("hp") ?? TryGetIntByNames("CurrentHealth", "CurrentHp", "Health", "Hp"));
-        TryAssignField("gold", () => snapshot.Gold = TryGetCachedInt("gold") ?? TryGetIntByNames("Gold", "gold"));
-        TryAssignField("floor", () => snapshot.Floor = TryGetCachedInt("floor") ?? TryGetIntByNames("Floor", "floor", "CurrentFloor", "ActFloor"));
-        TryAssignField("timeScale", () => snapshot.TimeScale = (float)Engine.TimeScale);
-        TryAssignField("hand", () => snapshot.Hand = BuildHandSnapshot());
+        TryAssignField("screen", () => snapshot.Screen = screen);
         TryAssignField("lastActionStatus", () => snapshot.LastActionStatus = _lastActionStatus);
+        TryAssignField("system", () => snapshot.System = BuildSystemSnapshot());
+        TryAssignField("runMeta", () => snapshot.RunMeta = BuildRunMetaSnapshot(context));
+        TryAssignField("combat", () => snapshot.Combat = BuildCombatSnapshot(context, screen));
+        TryAssignField("map", () => snapshot.Map = BuildMapSnapshot(context, screen));
+        TryAssignField("rewards", () => snapshot.Rewards = BuildRewardsSnapshot(context, screen));
+        TryAssignField("rest", () => snapshot.Rest = BuildRestSnapshot(context, screen));
+        TryAssignField("shop", () => snapshot.Shop = BuildShopSnapshot(context, screen));
+        TryAssignField("event", () => snapshot.Event = BuildEventSnapshot(context, screen));
+        TryAssignField("selection", () => snapshot.Selection = BuildSelectionSnapshot(snapshot));
+        TryAssignField("pending", () => snapshot.Pending = BuildPendingSnapshot(snapshot));
+        TryAssignField("actionability", () => snapshot.Actionability = BuildActionabilitySnapshot(snapshot));
 
         return snapshot;
+    }
+
+    private static SocsSystemSnapshot BuildSystemSnapshot()
+    {
+        return new SocsSystemSnapshot
+        {
+            TimeScale = (float)Engine.TimeScale
+        };
+    }
+
+    private static SocsRunMetaSnapshot BuildRunMetaSnapshot(SnapshotProbeContext context)
+    {
+        var runMeta = new SocsRunMetaSnapshot();
+        TryAssignField("runMeta.hp", () => runMeta.Hp = ProbeSnapshotInt(context, "hp", ["CurrentHealth", "CurrentHp", "Health", "Hp"]));
+        TryAssignField("runMeta.gold", () => runMeta.Gold = ProbeSnapshotInt(context, "gold", ["Gold", "gold"]));
+        TryAssignField("runMeta.floor", () => runMeta.Floor = ProbeSnapshotInt(context, "floor", ["Floor", "floor", "CurrentFloor", "ActFloor"]));
+        TryAssignField("runMeta.relics", () => runMeta.Relics = BuildRelicsSnapshot(context));
+        return runMeta;
+    }
+
+    private static List<SocsRelicSnapshot> BuildRelicsSnapshot(SnapshotProbeContext context)
+    {
+        List<SocsRelicSnapshot> relics = [];
+        int index = 0;
+        foreach (object relic in EnumerateCompositeItems(GetRelicProbeSource(context), context.Roots, RelicCollectionMemberNames, MaxPlausibleOptions))
+        {
+            string? name = TryReadStringByNames(relic, CardNameMembers);
+            if (string.IsNullOrWhiteSpace(name) && !ContainsAnyKeyword(relic.GetType().Name, ["Relic", "Artifact"]))
+            {
+                continue;
+            }
+
+            relics.Add(new SocsRelicSnapshot
+            {
+                Index = index++,
+                Id = BuildCardIdentity(relic),
+                Name = name ?? relic.GetType().Name
+            });
+        }
+
+        return relics;
+    }
+
+    private static object GetRelicProbeSource(SnapshotProbeContext context)
+    {
+        return context.Player ?? context.Run ?? context.PlayerManager ?? context.Roots.First();
+    }
+
+    private static SocsCombatSnapshot? BuildCombatSnapshot(SnapshotProbeContext context, string screen)
+    {
+        if (!string.Equals(screen, "combat", StringComparison.OrdinalIgnoreCase) && context.Combat == null)
+        {
+            return null;
+        }
+
+        var combat = new SocsCombatSnapshot();
+        TryAssignField("combat.playerEnergy", () => combat.PlayerEnergy = ProbePlayerEnergy(context));
+        TryAssignField("combat.playerBlock", () => combat.PlayerBlock = ProbeSnapshotInt(context, "playerBlock", BlockMemberNames));
+        TryAssignField("combat.playerPowers", () => combat.PlayerPowers = BuildPowersSnapshot(context.Player ?? context.Combat));
+        TryAssignField("combat.hand", () => combat.Hand = BuildHandSnapshot(context));
+        TryAssignField("combat.drawPile", () => combat.DrawPile = BuildZoneSnapshot(context, "drawPile", DrawPileNames, MaxPlausibleZoneCards));
+        TryAssignField("combat.discardPile", () => combat.DiscardPile = BuildZoneSnapshot(context, "discardPile", DiscardPileNames, MaxPlausibleZoneCards));
+        TryAssignField("combat.exhaustPile", () => combat.ExhaustPile = BuildZoneSnapshot(context, "exhaustPile", ExhaustPileNames, MaxPlausibleZoneCards));
+        TryAssignField("combat.enemies", () => combat.Enemies = BuildEnemiesSnapshot(context));
+        return combat;
+    }
+
+    private static SocsMapSnapshot? BuildMapSnapshot(SnapshotProbeContext context, string screen)
+    {
+        return null;
+    }
+
+    private static SocsRewardsSnapshot? BuildRewardsSnapshot(SnapshotProbeContext context, string screen)
+    {
+        return null;
+    }
+
+    private static SocsRestSnapshot? BuildRestSnapshot(SnapshotProbeContext context, string screen)
+    {
+        return null;
+    }
+
+    private static SocsSelectionSnapshot? BuildSelectionSnapshot(GameStateSnapshot snapshot)
+    {
+        if (snapshot.Shop?.LeaveOption != null)
+        {
+            return new SocsSelectionSnapshot
+            {
+                Kind = "shop",
+                RequiresTarget = false,
+                Options = BuildSelectionOptions(snapshot.Shop.Items.Count, snapshot.Shop.LeaveOption)
+            };
+        }
+
+        if (snapshot.Event?.Options.Count > 0)
+        {
+            return new SocsSelectionSnapshot
+            {
+                Kind = "event",
+                RequiresTarget = false,
+                Options = snapshot.Event.Options.ToList()
+            };
+        }
+
+        if (snapshot.Rest?.Options.Count > 0)
+        {
+            return new SocsSelectionSnapshot
+            {
+                Kind = "rest",
+                RequiresTarget = false,
+                Options = snapshot.Rest.Options.ToList()
+            };
+        }
+
+        return null;
+    }
+
+    private static SocsPendingSnapshot? BuildPendingSnapshot(GameStateSnapshot snapshot)
+    {
+        if (snapshot.Selection?.RequiresTarget == true)
+        {
+            return new SocsPendingSnapshot
+            {
+                Waiting = true,
+                Reason = "target_selection"
+            };
+        }
+
+        return null;
+    }
+
+    private static SocsActionabilitySnapshot BuildActionabilitySnapshot(GameStateSnapshot snapshot)
+    {
+        var actionability = new SocsActionabilitySnapshot();
+        actionability.AvailableCommands.Add("ping");
+        actionability.AvailableCommands.Add("set_time_scale");
+        actionability.AvailableCommands.Add("play_card");
+
+        actionability.CanPlayCard = snapshot.Combat?.Hand.Any(card => card.Playable == true) == true;
+        actionability.CanChooseOption = snapshot.Selection?.Options.Any(option => option.Enabled) == true;
+        actionability.CanEndTurn = snapshot.Combat != null;
+        actionability.RequiresTarget = snapshot.Selection?.RequiresTarget == true;
+        return actionability;
+    }
+
+    private static List<SocsOptionSnapshot> BuildSelectionOptions(int itemCount, SocsOptionSnapshot leaveOption)
+    {
+        List<SocsOptionSnapshot> options = [];
+        for (int i = 0; i < itemCount; i++)
+        {
+            options.Add(new SocsOptionSnapshot
+            {
+                Index = i,
+                Label = $"item_{i}",
+                Enabled = true
+            });
+        }
+
+        options.Add(new SocsOptionSnapshot
+        {
+            Index = itemCount,
+            Label = leaveOption.Label,
+            Enabled = leaveOption.Enabled
+        });
+
+        return options;
+    }
+
+    private static SnapshotProbeContext BuildProbeContext()
+    {
+        object[] roots = EnumerateDiscoveryRoots().ToArray();
+        object? run = FindPriorityObject(roots, RunMemberNames);
+        object? playerManager = FindPriorityObject(roots, PlayerManagerMemberNames);
+        object? player = FindPlayerProbe(run, playerManager, roots);
+        object? combat = FindPriorityObject(roots, CombatMemberNames);
+        object? shop = FindPriorityObject(roots, ShopScreenNames);
+        object? eventState = FindPriorityObject(roots, EventScreenNames);
+
+        return new SnapshotProbeContext(roots, run, playerManager, player, combat, shop, eventState);
+    }
+
+    private static int? ProbeSnapshotInt(SnapshotProbeContext context, string cacheKey, string[] memberNames)
+    {
+        if (TryReadIntFromContext(context, memberNames, out int directValue))
+        {
+            return directValue;
+        }
+
+        int? cachedValue = TryGetCachedInt(cacheKey);
+        if (cachedValue.HasValue)
+        {
+            return cachedValue.Value;
+        }
+
+        EnsureDiscoveryCache();
+        return TryGetCachedInt(cacheKey);
+    }
+
+    private static int? TryReadNestedIntByNames(object source, string[] containerNames, string[] memberNames)
+    {
+        foreach (string containerName in containerNames)
+        {
+            object? container = TryReadMember(source, containerName);
+            if (container == null)
+            {
+                continue;
+            }
+
+            int? nestedValue = TryReadIntByNames(container, memberNames);
+            if (nestedValue.HasValue)
+            {
+                return nestedValue;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryReadIntFromContext(SnapshotProbeContext context, string[] memberNames, out int value)
+    {
+        foreach (object candidate in EnumerateProbeCandidates(context))
+        {
+            foreach (string memberName in memberNames)
+            {
+                if (TryReadInt(candidate, memberName, out value))
+                {
+                    return true;
+                }
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static int? ProbePlayerEnergy(SnapshotProbeContext context)
+    {
+        if (TryReadIntFromContext(context, EnergyMemberNames, out int directValue))
+        {
+            return directValue;
+        }
+
+        foreach (object candidate in EnumerateProbeCandidates(context))
+        {
+            int? nestedValue = TryReadNestedIntByNames(candidate, EnergyContainerNames, EnergyMemberNames);
+            if (nestedValue.HasValue)
+            {
+                return nestedValue.Value;
+            }
+        }
+
+        int? cachedValue = TryGetCachedInt("playerEnergy");
+        if (cachedValue.HasValue)
+        {
+            return cachedValue.Value;
+        }
+
+        EnsureDiscoveryCache();
+        return TryGetCachedInt("playerEnergy");
+    }
+
+    private static IEnumerable<object> EnumerateProbeCandidates(SnapshotProbeContext context)
+    {
+        var seen = new HashSet<int>();
+
+        foreach (object? candidate in new[] { context.Player, context.Run, context.PlayerManager, context.Combat })
+        {
+            if (candidate == null)
+            {
+                continue;
+            }
+
+            int identity = RuntimeHelpers.GetHashCode(candidate);
+            if (seen.Add(identity))
+            {
+                yield return candidate;
+            }
+        }
+
+        foreach (object root in context.Roots)
+        {
+            int identity = RuntimeHelpers.GetHashCode(root);
+            if (seen.Add(identity))
+            {
+                yield return root;
+            }
+        }
+    }
+
+    private static object? FindPriorityObject(IEnumerable<object> roots, string[] memberNames)
+    {
+        foreach (object root in roots)
+        {
+            object? direct = TryFindMember(root, memberNames);
+            if (direct != null)
+            {
+                return direct;
+            }
+
+            foreach (object? candidate in EnumerateRootMembers(root))
+            {
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                object? nested = TryFindMember(candidate, memberNames);
+                if (nested != null)
+                {
+                    return nested;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static object? FindPlayerProbe(object? run, object? playerManager, IEnumerable<object> roots)
+    {
+        object? player = FindPlayerFromSource(run);
+        if (player != null)
+        {
+            return player;
+        }
+
+        player = FindPlayerFromSource(playerManager);
+        if (player != null)
+        {
+            return player;
+        }
+
+        foreach (object root in roots)
+        {
+            player = FindPlayerFromSource(root);
+            if (player != null)
+            {
+                return player;
+            }
+        }
+
+        return null;
+    }
+
+    private static object? FindPlayerFromSource(object? source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        object? direct = TryFindMember(source, PlayerParentNames);
+        if (direct != null)
+        {
+            return direct;
+        }
+
+        object? nestedRun = TryFindNestedMember(source, RunMemberNames, PlayerParentNames);
+        if (nestedRun != null)
+        {
+            return nestedRun;
+        }
+
+        object? nestedManager = TryFindNestedMember(source, PlayerManagerMemberNames, PlayerParentNames);
+        if (nestedManager != null)
+        {
+            return nestedManager;
+        }
+
+        return null;
+    }
+
+    private static object? FindZoneSource(SnapshotProbeContext context, string cacheKey, string[] zoneNames, int maxCards)
+    {
+        foreach (object candidate in EnumerateProbeCandidates(context))
+        {
+            foreach (object zoneCandidate in EnumerateZoneCandidates(candidate, cacheKey, zoneNames, maxCards))
+            {
+                return zoneCandidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<object> EnumerateZoneCandidates(object source, string cacheKey, string[] zoneNames, int maxCards)
+    {
+        foreach (object candidate in EnumerateNamedZoneCandidates(source, zoneNames))
+        {
+            if (TryBuildCardSnapshot(candidate, maxCards, out _, out int totalCount) && IsAcceptedZoneSource(cacheKey, totalCount))
+            {
+                yield return candidate;
+            }
+        }
+
+        foreach (string playerName in PlayerParentNames)
+        {
+            object? player = TryReadMember(source, playerName);
+            if (player == null)
+            {
+                continue;
+            }
+
+            foreach (object candidate in EnumerateNamedZoneCandidates(player, zoneNames))
+            {
+                if (TryBuildCardSnapshot(candidate, maxCards, out _, out int totalCount) && IsAcceptedZoneSource(cacheKey, totalCount))
+                {
+                    yield return candidate;
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<object> EnumerateNamedZoneCandidates(object source, string[] zoneNames)
+    {
+        object? direct = TryFindMember(source, zoneNames);
+        if (direct != null)
+        {
+            yield return direct;
+        }
+    }
+
+    private static bool IsAcceptedZoneSource(string cacheKey, int totalCount)
+    {
+        if (totalCount < 0)
+        {
+            return false;
+        }
+
+        return cacheKey switch
+        {
+            "hand" => totalCount <= MaxPlausibleHandCards,
+            _ => totalCount >= 0
+        };
+    }
+
+    private static bool IsPlausibleZoneSource(object zoneSource, int maxCards)
+    {
+        if (!TryBuildCardSnapshot(zoneSource, maxCards, out List<SocsHandCardSnapshot> cards, out int totalCount))
+        {
+            return false;
+        }
+
+        return totalCount >= 0 && totalCount <= maxCards && cards.Count <= maxCards;
+    }
+
+    private static bool IsMatchingZoneLeaf(string cacheKey, string leafName)
+    {
+        return GetZoneNames(cacheKey).Any(name => string.Equals(name, leafName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string[] GetZoneNames(string cacheKey)
+    {
+        return cacheKey switch
+        {
+            "hand" => HandParentNames,
+            "drawPile" => DrawPileNames,
+            "discardPile" => DiscardPileNames,
+            "exhaustPile" => ExhaustPileNames,
+            _ => []
+        };
+    }
+
+    private static int GetZoneCardLimit(string cacheKey)
+    {
+        return string.Equals(cacheKey, "hand", StringComparison.OrdinalIgnoreCase)
+            ? MaxPlausibleHandCards
+            : MaxPlausibleZoneCards;
+    }
+
+    private static bool TryResolveZoneFromPath(SocsMemberPath path, string cacheKey, out object? value)
+    {
+        value = null;
+        if (!IsMatchingZoneLeaf(cacheKey, path.LeafName))
+        {
+            return false;
+        }
+
+        if (!TryReadPathValue(path, out object? zoneSource) || zoneSource == null)
+        {
+            return false;
+        }
+
+        int maxCards = GetZoneCardLimit(cacheKey);
+        if (!TryBuildCardSnapshot(zoneSource, maxCards, out _, out int totalCount) || !IsAcceptedZoneSource(cacheKey, totalCount))
+        {
+            return false;
+        }
+
+        value = zoneSource;
+        return true;
+    }
+
+    private static bool PathsReferenceSameSource(SocsMemberPath left, SocsMemberPath right)
+    {
+        if (!ReferenceEquals(left.Root, right.Root))
+        {
+            return false;
+        }
+
+        if (left.Members.Count != right.Members.Count)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < left.Members.Count; i++)
+        {
+            if (!string.Equals(left.Members[i].Name, right.Members[i].Name, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static void RemoveZoneAliasConflicts(string cacheKey, SocsMemberPath path)
+    {
+        foreach (string otherKey in new[] { "hand", "drawPile", "discardPile", "exhaustPile" })
+        {
+            if (string.Equals(otherKey, cacheKey, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (CachedPaths.TryGetValue(otherKey, out SocsMemberPath? existingPath) && PathsReferenceSameSource(existingPath, path))
+            {
+                CachedPaths.Remove(otherKey);
+                LogDiscovery($"[SOCS] [DISCOVERY] Removed aliased zone cache {otherKey}: {existingPath.DisplayPath}");
+            }
+        }
+    }
+
+    private static bool TryGetCachedZoneSnapshot(string cacheKey, out List<SocsHandCardSnapshot> snapshot)
+    {
+        snapshot = [];
+        if (!CachedPaths.TryGetValue(cacheKey, out SocsMemberPath? zonePath))
+        {
+            return false;
+        }
+
+        if (!TryResolveZoneFromPath(zonePath, cacheKey, out object? cachedZoneSource) || cachedZoneSource == null)
+        {
+            LogDiscoveryWarning($"[SOCS] [DISCOVERY] Cached zone path invalidated for {cacheKey}: {zonePath.DisplayPath}");
+            CachedPaths.Remove(cacheKey);
+            _nextDiscoveryFrame = Math.Min(_nextDiscoveryFrame, _framesSinceInit + 1);
+            return false;
+        }
+
+        int maxCards = GetZoneCardLimit(cacheKey);
+        if (!TryBuildCardSnapshot(cachedZoneSource, maxCards, out snapshot, out _))
+        {
+            CachedPaths.Remove(cacheKey);
+            _nextDiscoveryFrame = Math.Min(_nextDiscoveryFrame, _framesSinceInit + 1);
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryGetZoneSnapshotFromDiscovery(string cacheKey, out List<SocsHandCardSnapshot> snapshot)
+    {
+        snapshot = [];
+        EnsureDiscoveryCache();
+        return TryGetCachedZoneSnapshot(cacheKey, out snapshot);
+    }
+
+    private static bool IsAcceptedZonePath(string cacheKey, SocsMemberPath path, object candidateValue)
+    {
+        if (!IsMatchingZoneLeaf(cacheKey, path.LeafName))
+        {
+            return false;
+        }
+
+        int maxCards = GetZoneCardLimit(cacheKey);
+        return TryBuildCardSnapshot(candidateValue, maxCards, out _, out int totalCount)
+            && IsAcceptedZoneSource(cacheKey, totalCount);
+    }
+
+    private static bool HasZoneAliasConflict(string cacheKey, SocsMemberPath path)
+    {
+        foreach ((string otherKey, SocsMemberPath existingPath) in CachedPaths)
+        {
+            if (string.Equals(otherKey, cacheKey, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (PathsReferenceSameSource(existingPath, path))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryFindDistinctZonePath(object gameRoot, string cacheKey, out SocsMemberPath? path, out object? value)
+    {
+        foreach ((SocsMemberPath candidatePath, object candidateValue) in EnumerateDiscoveryPaths(gameRoot))
+        {
+            if (!IsAcceptedZonePath(cacheKey, candidatePath, candidateValue))
+            {
+                continue;
+            }
+
+            if (HasZoneAliasConflict(cacheKey, candidatePath))
+            {
+                continue;
+            }
+
+            path = candidatePath;
+            value = candidateValue;
+            return true;
+        }
+
+        path = null;
+        value = null;
+        return false;
+    }
+
+    private static bool TryFindAnyAcceptedZonePath(object gameRoot, string cacheKey, out SocsMemberPath? path, out object? value)
+    {
+        foreach ((SocsMemberPath candidatePath, object candidateValue) in EnumerateDiscoveryPaths(gameRoot))
+        {
+            if (!IsAcceptedZonePath(cacheKey, candidatePath, candidateValue))
+            {
+                continue;
+            }
+
+            path = candidatePath;
+            value = candidateValue;
+            return true;
+        }
+
+        path = null;
+        value = null;
+        return false;
+    }
+
+    private static void LogZoneAliasFallback(string cacheKey, SocsMemberPath path)
+    {
+        if (HasZoneAliasConflict(cacheKey, path))
+        {
+            LogDiscoveryWarning($"[SOCS] [DISCOVERY] {cacheKey} still aliases another zone at {path.DisplayPath}");
+        }
+    }
+
+    private static bool TryBuildCardSnapshot(object zoneSource, int maxCards, out List<SocsHandCardSnapshot> snapshot, out int totalCount)
+    {
+        snapshot = [];
+        totalCount = -1;
+
+        IEnumerable<object?>? cards = TryEnumerateCardItems(zoneSource, maxCards, out int discoveredCount);
+        if (cards == null)
+        {
+            return false;
+        }
+
+        totalCount = discoveredCount;
+        if (totalCount > maxCards)
+        {
+            return false;
+        }
+
+        int index = 0;
+        foreach (object? card in cards)
+        {
+            if (card == null || !LooksLikeCard(card))
+            {
+                return false;
+            }
+
+            snapshot.Add(BuildCardSnapshot(card, index++));
+        }
+
+        return true;
+    }
+
+    private static SocsHandCardSnapshot BuildCardSnapshot(object card, int index)
+    {
+        var snapshot = new SocsHandCardSnapshot
+        {
+            Index = index,
+            Id = BuildCardIdentity(card),
+            Name = TryReadStringByNames(card, CardNameMembers),
+            Playable = TryReadBoolByNames(card, out bool playable, PlayableMemberNames) ? playable : null,
+            EnergyCost = TryReadIntByNames(card, CostMemberNames),
+            Targeting = NormalizeTargeting(card)
+        };
+
+        TryAssignField($"combat.hand[{index}].upgraded", () => snapshot.Upgraded = TryReadBoolByNames(card, out bool upgraded, UpgradeMemberNames) ? upgraded : null);
+        TryAssignField($"combat.hand[{index}].type", () => snapshot.Type = NormalizeCardType(card));
+        TryAssignField($"combat.hand[{index}].baseDamage", () => snapshot.BaseDamage = TryReadIntByNames(card, DamageMemberNames));
+        TryAssignField($"combat.hand[{index}].baseBlock", () => snapshot.BaseBlock = TryReadIntByNames(card, BlockMemberNames));
+        TryAssignField($"combat.hand[{index}].description", () => snapshot.Description = TryReadStringByNames(card, DescriptionMemberNames));
+        return snapshot;
+    }
+
+    private static string? NormalizeTargeting(object card)
+    {
+        object? rawTarget = TryFindMember(card, TargetTypeMemberNames);
+        if (rawTarget == null)
+        {
+            return null;
+        }
+
+        if (rawTarget is bool requiresTarget)
+        {
+            return requiresTarget ? "enemy" : "none";
+        }
+
+        string text = rawTarget.ToString()?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(text))
+        {
+            return null;
+        }
+
+        if (text.Contains("enemy", StringComparison.OrdinalIgnoreCase) || text.Contains("monster", StringComparison.OrdinalIgnoreCase))
+        {
+            return "enemy";
+        }
+
+        if (text.Contains("self", StringComparison.OrdinalIgnoreCase))
+        {
+            return "self";
+        }
+
+        if (text.Contains("all", StringComparison.OrdinalIgnoreCase) || text.Contains("multi", StringComparison.OrdinalIgnoreCase) || text.Contains("area", StringComparison.OrdinalIgnoreCase))
+        {
+            return "any";
+        }
+
+        if (bool.TryParse(text, out bool parsedRequiresTarget))
+        {
+            return parsedRequiresTarget ? "enemy" : "none";
+        }
+
+        return "unknown";
+    }
+
+    private static string? NormalizeCardType(object card)
+    {
+        object? rawType = TryFindMember(card, CardTypeMemberNames);
+        if (rawType == null)
+        {
+            return null;
+        }
+
+        string text = rawType.ToString()?.Trim() ?? string.Empty;
+        return string.IsNullOrWhiteSpace(text) ? null : text;
+    }
+
+    private static List<SocsPowerSnapshot> BuildPowersSnapshot(object? source)
+    {
+        if (source == null)
+        {
+            return [];
+        }
+
+        List<SocsPowerSnapshot> powers = [];
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (object power in EnumerateCompositeItems(source, [], PowerCollectionMemberNames, MaxPlausibleOptions * 4))
+        {
+            SocsPowerSnapshot? snapshot = TryBuildPowerSnapshot(power);
+            if (snapshot == null)
+            {
+                continue;
+            }
+
+            string dedupeKey = $"{snapshot.Id}:{snapshot.Amount?.ToString(CultureInfo.InvariantCulture) ?? "null"}";
+            if (!seen.Add(dedupeKey))
+            {
+                continue;
+            }
+
+            powers.Add(snapshot);
+        }
+
+        return powers;
+    }
+
+    private static SocsPowerSnapshot? TryBuildPowerSnapshot(object power)
+    {
+        try
+        {
+            string? id = TryReadStringByNames(power, PowerIdMemberNames);
+            int? amount = TryReadIntByNames(power, PowerAmountMemberNames);
+            if (string.IsNullOrWhiteSpace(id) && amount == null)
+            {
+                return null;
+            }
+
+            return new SocsPowerSnapshot
+            {
+                Id = id ?? BuildCardIdentity(power),
+                Amount = amount
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? NormalizeIntentType(object enemy)
+    {
+        object? rawIntent = TryFindMember(enemy, IntentTypeMemberNames);
+        if (rawIntent == null)
+        {
+            return null;
+        }
+
+        string text = rawIntent.ToString()?.Trim() ?? string.Empty;
+        return string.IsNullOrWhiteSpace(text) ? null : text;
+    }
+
+    private static int? TryReadIntentDamage(object enemy)
+    {
+        try
+        {
+            return TryReadIntByNames(enemy, IntentDamageMemberNames);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static int? TryReadIntentMulti(object enemy)
+    {
+        try
+        {
+            return TryReadIntByNames(enemy, IntentMultiMemberNames);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static List<SocsEnemySnapshot> BuildEnemiesSnapshot(SnapshotProbeContext context)
+    {
+        object? source = context.Combat;
+        if (source == null)
+        {
+            return [];
+        }
+
+        List<SocsEnemySnapshot> enemies = [];
+        int index = 0;
+        foreach (object enemy in EnumerateCompositeItems(source, context.Roots, EnemyCollectionMemberNames, MaxPlausibleOptions * 2))
+        {
+            if (!LooksLikeEnemy(enemy))
+            {
+                continue;
+            }
+
+            int enemyIndex = index++;
+            int? hp = TryReadIntByNames(enemy, "CurrentHealth", "CurrentHp", "Health", "Hp");
+            bool? alive = TryReadAliveState(enemy, hp);
+            var snapshot = new SocsEnemySnapshot
+            {
+                Index = enemyIndex,
+                Id = BuildCardIdentity(enemy),
+                Name = TryReadStringByNames(enemy, CardNameMembers) ?? enemy.GetType().Name,
+                Hp = hp,
+                Block = TryReadIntByNames(enemy, BlockMemberNames),
+                Alive = alive
+            };
+
+            TryAssignField($"combat.enemies[{enemyIndex}].intentType", () => snapshot.IntentType = NormalizeIntentType(enemy));
+            TryAssignField($"combat.enemies[{enemyIndex}].intentDamage", () => snapshot.IntentDamage = TryReadIntentDamage(enemy));
+            TryAssignField($"combat.enemies[{enemyIndex}].intentMulti", () => snapshot.IntentMulti = TryReadIntentMulti(enemy));
+            TryAssignField($"combat.enemies[{enemyIndex}].powers", () => snapshot.Powers = BuildPowersSnapshot(enemy));
+            enemies.Add(snapshot);
+        }
+
+        return enemies;
+    }
+
+    private static bool? TryReadAliveState(object enemy, int? hp)
+    {
+        if (TryReadBoolByNames(enemy, out bool aliveValue, "Alive", "alive", "IsAlive", "isAlive"))
+        {
+            return aliveValue;
+        }
+
+        if (TryReadBoolByNames(enemy, out bool deadValue, "Dead", "dead", "IsDead", "isDead"))
+        {
+            return !deadValue;
+        }
+
+        if (hp.HasValue)
+        {
+            return hp.Value > 0;
+        }
+
+        return null;
+    }
+
+    private static List<SocsShopItemSnapshot> BuildShopItems(object source, IEnumerable<object> roots)
+    {
+        List<SocsShopItemSnapshot> items = [];
+        int index = 0;
+        foreach (object item in EnumerateCompositeItems(source, roots, ShopItemsMemberNames, MaxPlausibleShopItems))
+        {
+            string? name = TryReadStringByNames(item, CardNameMembers)
+                ?? TryReadStringByNames(item, OptionLabelMemberNames)
+                ?? item.GetType().Name;
+
+            items.Add(new SocsShopItemSnapshot
+            {
+                Index = index++,
+                Id = BuildCardIdentity(item),
+                Name = name,
+                Price = TryReadIntByNames(item, PriceMemberNames),
+                Kind = InferShopItemKind(item),
+                Enabled = TryReadBoolByNames(item, out bool enabled, BoolStateMemberNames) ? enabled : true
+            });
+        }
+
+        return items;
+    }
+
+    private static IEnumerable<object?>? TryEnumerateCardItems(object source, int maxCards, out int count)
+    {
+        count = TryReadCollectionCount(source);
+        if (source is IEnumerable enumerable && source is not string)
+        {
+            return MaterializeEnumerable(enumerable, maxCards, ref count);
+        }
+
+        foreach (string memberName in ZoneMemberKeywords.Concat(["Items", "items", "List", "list", "Cards", "cards"]))
+        {
+            object? nested = TryReadMember(source, memberName);
+            if (nested is not IEnumerable nestedEnumerable || nested is string)
+            {
+                continue;
+            }
+
+            if (count < 0)
+            {
+                count = TryReadCollectionCount(nested);
+            }
+
+            return MaterializeEnumerable(nestedEnumerable, maxCards, ref count);
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<object?> MaterializeEnumerable(IEnumerable enumerable, int maxCards, ref int count)
+    {
+        List<object?> items = [];
+        foreach (object? item in enumerable)
+        {
+            items.Add(item);
+            if (count < 0 && items.Count > maxCards)
+            {
+                count = items.Count;
+                return items;
+            }
+        }
+
+        if (count < 0)
+        {
+            count = items.Count;
+        }
+
+        return items;
+    }
+
+    private static int TryReadCollectionCount(object source)
+    {
+        foreach (string memberName in CollectionCountMembers)
+        {
+            if (TryReadInt(source, memberName, out int value))
+            {
+                return value;
+            }
+        }
+
+        return -1;
+    }
+
+    private static bool LooksLikeCard(object value)
+    {
+        return ContainsAnyKeyword(value.GetType().Name, CardTypeKeywords)
+            || ContainsAnyKeyword(value.GetType().FullName, CardTypeKeywords)
+            || TryReadStringByNames(value, CardIdMembers) != null
+            || TryReadStringByNames(value, CardNameMembers) != null;
+    }
+
+    private static bool LooksLikeEnemy(object value)
+    {
+        return ContainsAnyKeyword(value.GetType().Name, EnemyTypeKeywords)
+            || ContainsAnyKeyword(value.GetType().FullName, EnemyTypeKeywords)
+            || TryReadStringByNames(value, CardNameMembers) != null && TryReadIntByNames(value, "CurrentHealth", "CurrentHp", "Health", "Hp") != null;
+    }
+
+    private static List<SocsHandCardSnapshot> BuildZoneSnapshot(SnapshotProbeContext context, string cacheKey, string[] zoneNames, int maxCards)
+    {
+        object? zoneSource = FindZoneSource(context, cacheKey, zoneNames, maxCards);
+        if (zoneSource != null && TryBuildCardSnapshot(zoneSource, maxCards, out List<SocsHandCardSnapshot> directSnapshot, out _))
+        {
+            return directSnapshot;
+        }
+
+        if (TryGetCachedZoneSnapshot(cacheKey, out List<SocsHandCardSnapshot> cachedSnapshot))
+        {
+            return cachedSnapshot;
+        }
+
+        if (TryGetZoneSnapshotFromDiscovery(cacheKey, out List<SocsHandCardSnapshot> refreshedSnapshot))
+        {
+            return refreshedSnapshot;
+        }
+
+        return [];
+    }
+
+    private static List<SocsHandCardSnapshot> BuildHandSnapshotFromSource(object handSource)
+    {
+        return TryBuildCardSnapshot(handSource, MaxPlausibleHandCards, out List<SocsHandCardSnapshot> snapshot, out _)
+            ? snapshot
+            : [];
+    }
+
+    private static List<SocsHandCardSnapshot> BuildHandSnapshot(SnapshotProbeContext context)
+    {
+        return BuildZoneSnapshot(context, "hand", HandParentNames, MaxPlausibleHandCards);
+    }
+
+    private static bool TryFindZonePath(object gameRoot, string cacheKey, string[] zoneNames, int maxCards, out SocsMemberPath? path, out object? value)
+    {
+        if (TryFindDistinctZonePath(gameRoot, cacheKey, out path, out value))
+        {
+            return true;
+        }
+
+        if (TryFindAnyAcceptedZonePath(gameRoot, cacheKey, out path, out value))
+        {
+            LogZoneAliasFallback(cacheKey, path!);
+            return true;
+        }
+
+        path = null;
+        value = null;
+        return false;
+    }
+
+    private static void TryCacheZonePath(string cacheKey, object gameRoot, string[] zoneNames, int maxCards)
+    {
+        if (CachedPaths.ContainsKey(cacheKey) || !TryFindZonePath(gameRoot, cacheKey, zoneNames, maxCards, out SocsMemberPath? path, out object? zoneSource) || path == null)
+        {
+            return;
+        }
+
+        RemoveZoneAliasConflicts(cacheKey, path);
+        CachedPaths[cacheKey] = path;
+        LogDiscovery($"[SOCS] [DISCOVERY] Cached {cacheKey}: {path.DisplayPath} => {zoneSource?.GetType().FullName ?? "<null>"}");
+    }
+
+    private static bool IsZoneLeafName(string leafName)
+    {
+        return HandParentNames.Any(name => string.Equals(name, leafName, StringComparison.OrdinalIgnoreCase))
+            || DrawPileNames.Any(name => string.Equals(name, leafName, StringComparison.OrdinalIgnoreCase))
+            || DiscardPileNames.Any(name => string.Equals(name, leafName, StringComparison.OrdinalIgnoreCase))
+            || ExhaustPileNames.Any(name => string.Equals(name, leafName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsZoneCandidatePath(SocsMemberPath path)
+    {
+        return path.Members.Any(member => ContainsAnyKeyword(member.Name, ZoneMemberKeywords))
+            || IsZoneLeafName(path.LeafName);
+    }
+
+    private static bool IsLikelyPlayerScopePath(SocsMemberPath path)
+    {
+        return path.Members.Any(member => PlayerParentNames.Any(name => string.Equals(name, member.Name, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static bool IsBattleZonePath(SocsMemberPath path)
+    {
+        return IsZoneCandidatePath(path) && IsLikelyPlayerScopePath(path);
+    }
+
+    private static IEnumerable<(SocsMemberPath Path, object Value)> EnumerateBattleZonePaths(object root)
+    {
+        foreach ((SocsMemberPath path, object value) in EnumerateDiscoveryPaths(root))
+        {
+            if (IsBattleZonePath(path))
+            {
+                yield return (path, value);
+            }
+        }
+    }
+
+    private static void LogBattleZoneTopology(object root)
+    {
+        if (!IsDiscoveryLoggingEnabled())
+        {
+            return;
+        }
+
+        int logged = 0;
+        foreach ((SocsMemberPath path, object value) in EnumerateBattleZonePaths(root))
+        {
+            LogDiscovery($"[SOCS] [ZONE] {path.DisplayPath} ({value.GetType().FullName}) => {FormatDiscoveryValue(value)}");
+            logged++;
+            if (logged >= 64)
+            {
+                break;
+            }
+        }
+    }
+
+    private static void LogResolvedZoneState(object root)
+    {
+        if (!IsDiscoveryLoggingEnabled())
+        {
+            return;
+        }
+
+        foreach ((string key, string[] names, int maxCards) in new[]
+                 {
+                     ("hand", HandParentNames, MaxPlausibleHandCards),
+                     ("drawPile", DrawPileNames, MaxPlausibleZoneCards),
+                     ("discardPile", DiscardPileNames, MaxPlausibleZoneCards),
+                     ("exhaustPile", ExhaustPileNames, MaxPlausibleZoneCards)
+                 })
+        {
+            if (TryFindZonePath(root, key, names, maxCards, out SocsMemberPath? path, out object? value) && path != null)
+            {
+                LogDiscovery($"[SOCS] [ZONE] resolved {key}: {path.DisplayPath} => {value?.GetType().FullName ?? "<null>"}");
+            }
+        }
+    }
+
+    private static void TryCacheBattleZonePaths(object root)
+    {
+        TryCacheZonePath("hand", root, HandParentNames, MaxPlausibleHandCards);
+        TryCacheZonePath("drawPile", root, DrawPileNames, MaxPlausibleZoneCards);
+        TryCacheZonePath("discardPile", root, DiscardPileNames, MaxPlausibleZoneCards);
+        TryCacheZonePath("exhaustPile", root, ExhaustPileNames, MaxPlausibleZoneCards);
+    }
+
+    private static bool HasCompleteBattleZoneCache()
+    {
+        return CachedPaths.ContainsKey("hand")
+            && CachedPaths.ContainsKey("drawPile")
+            && CachedPaths.ContainsKey("discardPile")
+            && CachedPaths.ContainsKey("exhaustPile");
+    }
+
+    private static bool HasCompleteDiscoveryCache()
+    {
+        return CachedPaths.ContainsKey("hp")
+            && CachedPaths.ContainsKey("gold")
+            && CachedPaths.ContainsKey("floor")
+            && HasCompleteBattleZoneCache();
+    }
+
+    private static bool TryFindAnyCardZonePath(object gameRoot, out SocsMemberPath? path, out object? value)
+    {
+        return TryFindZonePath(gameRoot, "hand", HandParentNames, MaxPlausibleHandCards, out path, out value)
+            || TryFindZonePath(gameRoot, "drawPile", DrawPileNames, MaxPlausibleZoneCards, out path, out value)
+            || TryFindZonePath(gameRoot, "discardPile", DiscardPileNames, MaxPlausibleZoneCards, out path, out value)
+            || TryFindZonePath(gameRoot, "exhaustPile", ExhaustPileNames, MaxPlausibleZoneCards, out path, out value);
+    }
+
+    private static void CacheBattleZoneDiagnostics(object root)
+    {
+        LogBattleZoneTopology(root);
+        LogResolvedZoneState(root);
     }
 
     private static void EnsureDiscoveryCache()
@@ -265,13 +1486,17 @@ internal static class SocsRuntime
             if (!_discoveryTopologyLogged)
             {
                 LogDiscoveryTopology(root);
-                LogTargetedDiscoveryTrace(root);
             }
 
             TryCacheIntPath("hp", root, "CurrentHealth", "CurrentHp", "Health", "Hp");
             TryCacheIntPath("gold", root, "Gold", "gold");
             TryCacheIntPath("floor", root, "Floor", "floor", "CurrentFloor", "ActFloor");
-            TryCacheHandPath(root);
+            TryCacheBattleZonePaths(root);
+
+            if (!_discoveryTopologyLogged)
+            {
+                CacheBattleZoneDiagnostics(root);
+            }
 
             if (HasCompleteDiscoveryCache())
             {
@@ -304,20 +1529,11 @@ internal static class SocsRuntime
             return converted;
         }
 
-        GD.PushWarning($"[SOCS] [DISCOVERY] Cached path invalidated for {key}: {path.DisplayPath}");
+        LogDiscoveryWarning($"[SOCS] [DISCOVERY] Cached path invalidated for {key}: {path.DisplayPath}");
         CachedPaths.Remove(key);
         _nextDiscoveryFrame = Math.Min(_nextDiscoveryFrame, _framesSinceInit + 1);
         return null;
     }
-
-    private static bool HasCompleteDiscoveryCache()
-    {
-        return CachedPaths.ContainsKey("hp")
-            && CachedPaths.ContainsKey("gold")
-            && CachedPaths.ContainsKey("floor")
-            && CachedPaths.ContainsKey("hand");
-    }
-
 
     private static void TryCacheIntPath(string key, object gameRoot, params string[] terminalNames)
     {
@@ -332,19 +1548,9 @@ internal static class SocsRuntime
         }
 
         CachedPaths[key] = path;
-        GD.Print($"[SOCS] [DISCOVERY] Cached {key}: {path.DisplayPath} => {FormatDiscoveryValue(value)}");
+        LogDiscovery($"[SOCS] [DISCOVERY] Cached {key}: {path.DisplayPath} => {FormatDiscoveryValue(value)}");
     }
 
-    private static void TryCacheHandPath(object gameRoot)
-    {
-        if (CachedPaths.ContainsKey("hand") || !TryFindHandPath(gameRoot, out SocsMemberPath? path, out object? handSource) || path == null)
-        {
-            return;
-        }
-
-        CachedPaths["hand"] = path;
-        GD.Print($"[SOCS] [DISCOVERY] Cached hand: {path.DisplayPath} => {handSource?.GetType().FullName ?? "<null>"}");
-    }
     private static bool TryFindMemberPath(object gameRoot, string[] terminalNames, out SocsMemberPath? path, out object? value)
     {
         foreach ((SocsMemberPath candidatePath, object candidateValue) in EnumerateDiscoveryPaths(gameRoot))
@@ -369,28 +1575,25 @@ internal static class SocsRuntime
         return false;
     }
 
-    private static bool TryFindHandPath(object gameRoot, out SocsMemberPath? path, out object? value)
+    private static bool IsDiscoveryLoggingEnabled()
     {
-        foreach ((SocsMemberPath candidatePath, object candidateValue) in EnumerateDiscoveryPaths(gameRoot))
+        return !_discoveryTopologyLogged;
+    }
+
+    private static void LogDiscovery(string message)
+    {
+        if (IsDiscoveryLoggingEnabled())
         {
-            if (!HandParentNames.Any(name => string.Equals(name, candidatePath.LeafName, StringComparison.OrdinalIgnoreCase)))
-            {
-                continue;
-            }
-
-            if (!EnumerateObjects(candidateValue).Any(item => item != null))
-            {
-                continue;
-            }
-
-            path = candidatePath;
-            value = candidateValue;
-            return true;
+            GD.Print(message);
         }
+    }
 
-        path = null;
-        value = null;
-        return false;
+    private static void LogDiscoveryWarning(string message)
+    {
+        if (IsDiscoveryLoggingEnabled())
+        {
+            GD.PushWarning(message);
+        }
     }
 
     private static IEnumerable<(SocsMemberPath Path, object Value)> EnumerateDiscoveryPaths(object root)
@@ -455,69 +1658,6 @@ internal static class SocsRuntime
 
         value = current;
         return current != null;
-    }
-
-    private static void LogTargetedDiscoveryTrace(object root)
-    {
-        string rootType = root.GetType().FullName ?? root.GetType().Name;
-        GD.Print($"[SOCS] [TRACE] Begin targeted trace from {rootType}");
-
-        int logged = 0;
-        foreach ((SocsMemberPath path, object value) in EnumerateDiscoveryPaths(root))
-        {
-            if (!ShouldLogTracePath(path, value))
-            {
-                continue;
-            }
-
-            GD.Print($"[SOCS] [TRACE] {path.DisplayPath} ({value.GetType().FullName}) => {FormatTraceValue(value)}");
-            logged++;
-            if (logged >= TraceLogLimit)
-            {
-                GD.Print($"[SOCS] [TRACE] Trace truncated after {logged} matches from {rootType}");
-                return;
-            }
-        }
-
-        GD.Print($"[SOCS] [TRACE] Trace completed with {logged} matches from {rootType}");
-    }
-
-    private static bool ShouldLogTracePath(SocsMemberPath path, object value)
-    {
-        if (TraceTerminalNames.Any(name => string.Equals(name, path.LeafName, StringComparison.OrdinalIgnoreCase)))
-        {
-            return true;
-        }
-
-        string displayPath = path.DisplayPath;
-        if (ContainsAnyKeyword(displayPath, TraceTerminalNames))
-        {
-            return true;
-        }
-
-        Type type = value.GetType();
-        return ContainsAnyKeyword(type.Name, TraceTerminalNames)
-            || ContainsAnyKeyword(type.FullName, TraceTerminalNames);
-    }
-
-    private static string FormatTraceValue(object value)
-    {
-        if (value is IEnumerable enumerable and not string and not IDictionary)
-        {
-            int count = 0;
-            foreach (object? _ in enumerable)
-            {
-                count++;
-                if (count >= 16)
-                {
-                    break;
-                }
-            }
-
-            return $"{value.GetType().FullName} [count~{count}]";
-        }
-
-        return FormatDiscoveryValue(value);
     }
 
     private static void LogDiscoveryTopology(object gameRoot)
@@ -664,6 +1804,263 @@ internal static class SocsRuntime
         }
     }
 
+    private static string DetectScreen(SnapshotProbeContext context)
+    {
+        if (LooksLikeActiveScreen(context.Shop))
+        {
+            return "shop";
+        }
+
+        if (LooksLikeActiveScreen(context.Event))
+        {
+            return "event";
+        }
+
+        if (context.Combat != null)
+        {
+            return "combat";
+        }
+
+        return "unknown";
+    }
+
+    private static bool LooksLikeActiveScreen(object? source)
+    {
+        if (source == null)
+        {
+            return false;
+        }
+
+        if (TryReadBoolByNames(source, out bool visible, "Visible", "visible", "IsVisible", "isVisible", "Open", "open", "Active", "active"))
+        {
+            return visible;
+        }
+
+        return true;
+    }
+
+    private static SocsShopSnapshot? BuildShopSnapshot(SnapshotProbeContext context, string screen)
+    {
+        if (!string.Equals(screen, "shop", StringComparison.OrdinalIgnoreCase) && context.Shop == null)
+        {
+            return null;
+        }
+
+        object? source = context.Shop;
+        if (source == null)
+        {
+            return null;
+        }
+
+        List<SocsShopItemSnapshot> items = BuildShopItems(source, context.Roots);
+        SocsOptionSnapshot? leaveOption = BuildLeaveOption(source, context.Roots);
+        if (items.Count == 0 && leaveOption == null)
+        {
+            return null;
+        }
+
+        return new SocsShopSnapshot
+        {
+            Items = items,
+            LeaveOption = leaveOption
+        };
+    }
+
+    private static SocsEventSnapshot? BuildEventSnapshot(SnapshotProbeContext context, string screen)
+    {
+        if (!string.Equals(screen, "event", StringComparison.OrdinalIgnoreCase) && context.Event == null)
+        {
+            return null;
+        }
+
+        object? source = context.Event;
+        if (source == null)
+        {
+            return null;
+        }
+
+        List<SocsOptionSnapshot> options = BuildOptionsSnapshot(source, context.Roots);
+        string? eventName = TryReadStringByNames(source, "EventName", "eventName", "Name", "name", "Title", "title")
+            ?? source.GetType().Name;
+
+        if (string.IsNullOrWhiteSpace(eventName) && options.Count == 0)
+        {
+            return null;
+        }
+
+        return new SocsEventSnapshot
+        {
+            EventName = eventName,
+            Options = options
+        };
+    }
+
+
+    private static SocsOptionSnapshot? BuildLeaveOption(object source, IEnumerable<object> roots)
+    {
+        foreach (object candidate in EnumerateKnownObjects(source, roots))
+        {
+            foreach (string memberName in LeaveOptionMemberNames)
+            {
+                object? leave = TryReadMember(candidate, memberName);
+                if (leave == null)
+                {
+                    continue;
+                }
+
+                return new SocsOptionSnapshot
+                {
+                    Index = 0,
+                    Label = TryReadStringByNames(leave, OptionLabelMemberNames) ?? memberName,
+                    Enabled = TryReadBoolByNames(leave, out bool enabled, BoolStateMemberNames) ? enabled : true
+                };
+            }
+        }
+
+        foreach (SocsOptionSnapshot option in BuildOptionsSnapshot(source, roots))
+        {
+            if (ContainsAnyKeyword(option.Label, LeaveOptionMemberNames))
+            {
+                return option;
+            }
+        }
+
+        return null;
+    }
+
+    private static List<SocsOptionSnapshot> BuildOptionsSnapshot(object source, IEnumerable<object> roots)
+    {
+        List<SocsOptionSnapshot> options = [];
+        int index = 0;
+        foreach (object option in EnumerateCompositeItems(source, roots, OptionCollectionMemberNames, MaxPlausibleOptions))
+        {
+            options.Add(new SocsOptionSnapshot
+            {
+                Index = index++,
+                Label = TryReadStringByNames(option, OptionLabelMemberNames) ?? option.GetType().Name,
+                Enabled = TryReadBoolByNames(option, out bool enabled, BoolStateMemberNames) ? enabled : true
+            });
+        }
+
+        return options;
+    }
+
+    private static IEnumerable<object> EnumerateCompositeItems(object source, IEnumerable<object> roots, string[] memberNames, int maxItems)
+    {
+        var seen = new HashSet<int>();
+        int yielded = 0;
+
+        foreach (object candidate in EnumerateKnownObjects(source, roots))
+        {
+            foreach (string memberName in memberNames)
+            {
+                object? memberValue = TryReadMember(candidate, memberName);
+                if (memberValue == null)
+                {
+                    continue;
+                }
+
+                foreach (object? item in EnumerateObjects(memberValue))
+                {
+                    if (item == null)
+                    {
+                        continue;
+                    }
+
+                    int identity = RuntimeHelpers.GetHashCode(item);
+                    if (!seen.Add(identity))
+                    {
+                        continue;
+                    }
+
+                    yield return item;
+                    yielded++;
+                    if (yielded >= maxItems)
+                    {
+                        yield break;
+                    }
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<object> EnumerateKnownObjects(object source, IEnumerable<object> roots)
+    {
+        var seen = new HashSet<int>();
+
+        foreach (object candidate in new[] { source }.Concat(roots))
+        {
+            int identity = RuntimeHelpers.GetHashCode(candidate);
+            if (seen.Add(identity))
+            {
+                yield return candidate;
+            }
+        }
+    }
+
+    private static string InferShopItemKind(object item)
+    {
+        string typeName = item.GetType().Name;
+        if (ContainsAnyKeyword(typeName, ["Relic"]))
+        {
+            return "relic";
+        }
+
+        if (ContainsAnyKeyword(typeName, ["Potion"]))
+        {
+            return "potion";
+        }
+
+        if (ContainsAnyKeyword(typeName, ["Card"]))
+        {
+            return "card";
+        }
+
+        return typeName;
+    }
+
+    private static int? TryReadIntByNames(object source, params string[] memberNames)
+    {
+        foreach (string memberName in memberNames)
+        {
+            if (TryReadInt(source, memberName, out int value))
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryReadBoolByNames(object source, out bool value, params string[] memberNames)
+    {
+        foreach (string memberName in memberNames)
+        {
+            object? rawValue = TryReadMember(source, memberName);
+            if (rawValue == null)
+            {
+                continue;
+            }
+
+            switch (rawValue)
+            {
+                case bool boolValue:
+                    value = boolValue;
+                    return true;
+                default:
+                    if (bool.TryParse(rawValue.ToString(), out bool parsed))
+                    {
+                        value = parsed;
+                        return true;
+                    }
+                    break;
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
     private static void TryAssignField(string fieldName, Action assign)
     {
         try
@@ -719,7 +2116,7 @@ internal static class SocsRuntime
     private static bool TryMatchHandCard(int? requestedIndex, string? requestedCardId, out SocsHandCardSnapshot? matchedCard)
     {
         matchedCard = null;
-        List<SocsHandCardSnapshot> hand = BuildHandSnapshot();
+        List<SocsHandCardSnapshot> hand = BuildHandSnapshot(BuildProbeContext());
 
         if (!string.IsNullOrWhiteSpace(requestedCardId))
         {
@@ -737,82 +2134,6 @@ internal static class SocsRuntime
         }
 
         return false;
-    }
-
-    private static List<SocsHandCardSnapshot> BuildHandSnapshot()
-    {
-        if (CachedPaths.TryGetValue("hand", out SocsMemberPath? handPath)
-            && TryReadPathValue(handPath, out object? cachedHandSource)
-            && cachedHandSource != null)
-        {
-            List<SocsHandCardSnapshot> cachedSnapshot = BuildHandSnapshotFromSource(cachedHandSource);
-            if (cachedSnapshot.Count > 0)
-            {
-                return cachedSnapshot;
-            }
-
-            CachedPaths.Remove("hand");
-            _nextDiscoveryFrame = Math.Min(_nextDiscoveryFrame, _framesSinceInit + 1);
-        }
-
-        foreach (object root in EnumerateDiscoveryRoots())
-        {
-            object? handSource = TryFindHandSource(root);
-            if (handSource == null)
-            {
-                continue;
-            }
-
-            var snapshot = BuildHandSnapshotFromSource(handSource);
-            if (snapshot.Count > 0)
-            {
-                return snapshot;
-            }
-        }
-
-        return [];
-    }
-
-    private static List<SocsHandCardSnapshot> BuildHandSnapshotFromSource(object handSource)
-    {
-        var snapshot = new List<SocsHandCardSnapshot>();
-        int index = 0;
-        foreach (object? card in EnumerateObjects(handSource))
-        {
-            if (card == null)
-            {
-                continue;
-            }
-
-            snapshot.Add(new SocsHandCardSnapshot
-            {
-                Index = index++,
-                Id = BuildCardIdentity(card),
-                Name = TryReadStringByNames(card, CardNameMembers)
-            });
-        }
-
-        return snapshot;
-    }
-
-    private static object? TryFindHandSource(object root)
-    {
-        foreach (object node in EnumerateObjectGraph(root))
-        {
-            object? direct = TryFindMember(node, HandParentNames);
-            if (direct != null)
-            {
-                return direct;
-            }
-
-            object? nested = TryFindNestedMember(node, PlayerParentNames, HandParentNames);
-            if (nested != null)
-            {
-                return nested;
-            }
-        }
-
-        return null;
     }
 
     private static IEnumerable<object> EnumerateDiscoveryRoots()
@@ -876,7 +2197,7 @@ internal static class SocsRuntime
             yield break;
         }
 
-        GD.Print($"[SOCS] [DISCOVERY] Root candidate ({source}): {root.GetType().FullName}");
+        LogDiscovery($"[SOCS] [DISCOVERY] Root candidate ({source}): {root.GetType().FullName}");
         yield return root;
     }
 
@@ -1090,15 +2411,15 @@ internal static class SocsRuntime
                 }
 
                 object? singleton = TryReadStaticSingleton(type);
-                if (singleton != null)
+                if (singleton != null && ShouldTraverse(singleton))
                 {
-                    GD.Print($"[SOCS] [DISCOVERY] Found singleton candidate: {type.FullName} -> {singleton.GetType().FullName}");
+                    LogDiscovery($"[SOCS] [DISCOVERY] Found singleton candidate: {type.FullName} -> {singleton.GetType().FullName}");
                     return singleton;
                 }
             }
         }
 
-        GD.Print("[SOCS] [DISCOVERY] No singleton candidate found");
+        LogDiscovery("[SOCS] [DISCOVERY] No singleton candidate found");
         return null;
     }
 
@@ -1327,6 +2648,16 @@ internal static class SocsRuntime
 }
 
 internal readonly record struct SocsPendingCommand(SocsInboundCommand Command, SocsClientConnection Client);
+
+internal readonly record struct SnapshotProbeContext(
+    object[] Roots,
+    object? Run,
+    object? PlayerManager,
+    object? Player,
+    object? Combat,
+    object? Shop,
+    object? Event
+);
 
 internal sealed class SocsMemberPath
 {
