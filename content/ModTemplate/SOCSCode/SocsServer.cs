@@ -53,6 +53,10 @@ internal sealed class SocsServer
         _cts = null;
     }
 
+    public bool HasClients => !_clients.IsEmpty;
+
+    public int ClientCount => _clients.Count;
+
     public void Broadcast(ReadOnlyMemory<byte> payload)
     {
         foreach (SocsClientConnection client in _clients.Values)

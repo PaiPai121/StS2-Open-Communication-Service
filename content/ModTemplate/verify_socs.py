@@ -12,6 +12,14 @@ PORT = 7777
 MAX_FRAME_BYTES = 1024 * 1024
 
 
+def configure_stdio() -> None:
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if stream is None or not hasattr(stream, "reconfigure"):
+            continue
+        stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def read_exact(sock: socket.socket, size: int) -> bytes:
     chunks = []
     remaining = size
@@ -84,6 +92,9 @@ def print_snapshot(message: dict[str, Any]) -> None:
     data = message.get("data") or {}
     run_meta = data.get("runMeta") or {}
     combat = data.get("combat") or {}
+    selection = data.get("selection") or {}
+    pending = data.get("pending") or {}
+    actionability = data.get("actionability") or {}
     enemies = combat.get("enemies") or []
     hand = combat.get("hand") or []
 
@@ -113,6 +124,45 @@ def print_snapshot(message: dict[str, Any]) -> None:
             + ("| " + ", ".join(potion_items) if potion_items else "")
         )
 
+    if selection or pending or actionability:
+        print("-" * 42)
+        print("[CONTROL SURFACE]")
+        if selection:
+            selection_kind = format_value(selection.get("kind"), "none")
+            requires_target = format_value(selection.get("requiresTarget"), "false")
+            selection_options = selection.get("options") or []
+            print(f"Selection: {selection_kind} | RequiresTarget: {requires_target}")
+            if selection_options:
+                option_lines = []
+                for option in selection_options:
+                    option_lines.append(
+                        f"[{format_value(option.get('index'))}] "
+                        f"{format_value(option.get('label'), 'Unknown')} "
+                        f"[enabled={format_value(option.get('enabled'), 'true')}]"
+                    )
+                print("Options: " + ", ".join(option_lines))
+        else:
+            print("Selection: none")
+
+        if pending:
+            print(
+                "Pending: "
+                f"waiting={format_value(pending.get('waiting'), 'false')} "
+                f"reason={format_value(pending.get('reason'), 'none')}"
+            )
+        else:
+            print("Pending: none")
+
+        available_commands = actionability.get("availableCommands") or []
+        print(
+            "Actionability: "
+            f"play={format_value(actionability.get('canPlayCard'), 'false')} "
+            f"choose={format_value(actionability.get('canChooseOption'), 'false')} "
+            f"end={format_value(actionability.get('canEndTurn'), 'false')} "
+            f"requiresTarget={format_value(actionability.get('requiresTarget'), 'false')}"
+        )
+        print("Commands: " + (", ".join(str(command) for command in available_commands) if available_commands else "(none)"))
+
     print("-" * 42)
     print("[ENEMIES]")
     if enemies:
@@ -140,14 +190,49 @@ def print_snapshot(message: dict[str, Any]) -> None:
     print("=" * 42, flush=True)
 
 
-def print_message(message: dict[str, Any]) -> None:
-    if message.get("type") == "snapshot":
-        print_snapshot(message)
-        return
-    print(json.dumps(message, ensure_ascii=False, indent=2), flush=True)
+def build_command_payload(args: argparse.Namespace) -> dict[str, Any] | None:
+    if args.play_card_index is not None or args.play_card_id or args.target_index is not None or args.target_id:
+        payload: dict[str, Any] = {}
+        if args.play_card_index is not None:
+            payload["index"] = args.play_card_index
+        if args.play_card_id:
+            payload["cardId"] = args.play_card_id
+        if args.target_index is not None:
+            payload["targetIndex"] = args.target_index
+        if args.target_id:
+            payload["targetId"] = args.target_id
+        return payload
+    return None
+
+
+def send_requested_commands(sock: socket.socket, args: argparse.Namespace) -> None:
+    if args.ping:
+        write_frame(sock, make_command("ping"))
+    if args.time_scale is not None:
+        write_frame(sock, make_command("set_time_scale", {"value": args.time_scale}))
+
+    play_card_payload = build_command_payload(args)
+    if play_card_payload is not None:
+        write_frame(sock, make_command("play_card", play_card_payload))
+
+    if args.end_turn:
+        write_frame(sock, make_command("end_turn"))
+
+    if args.choose_option is not None:
+        write_frame(sock, make_command("choose_option", {"optionIndex": args.choose_option}))
+
+    if args.select_target_index is not None or args.select_target_id:
+        target_payload: dict[str, Any] = {}
+        if args.select_target_index is not None:
+            target_payload["targetIndex"] = args.select_target_index
+        if args.select_target_id:
+            target_payload["targetId"] = args.select_target_id
+        write_frame(sock, make_command("select_target", target_payload))
+
 
 
 def main() -> int:
+    configure_stdio()
     parser = argparse.ArgumentParser(description="Verify SOCS TCP snapshots and commands")
     parser.add_argument("--host", default=HOST)
     parser.add_argument("--port", type=int, default=PORT)
@@ -155,23 +240,18 @@ def main() -> int:
     parser.add_argument("--set-time-scale", type=float, dest="time_scale", help="send set_time_scale command")
     parser.add_argument("--play-card-index", type=int, help="send play_card with index")
     parser.add_argument("--play-card-id", help="send play_card with cardId")
+    parser.add_argument("--target-index", type=int, help="send play_card targetIndex")
+    parser.add_argument("--target-id", help="send play_card targetId")
+    parser.add_argument("--end-turn", action="store_true", help="send end_turn command")
+    parser.add_argument("--choose-option", type=int, help="send choose_option with optionIndex")
+    parser.add_argument("--select-target-index", type=int, help="send select_target with targetIndex")
+    parser.add_argument("--select-target-id", help="send select_target with targetId")
     parser.add_argument("--read-count", type=int, default=0, help="stop after N received messages (0 = infinite)")
     args = parser.parse_args()
 
     with socket.create_connection((args.host, args.port)) as sock:
         print(f"connected to {args.host}:{args.port}", file=sys.stderr)
-
-        if args.ping:
-            write_frame(sock, make_command("ping"))
-        if args.time_scale is not None:
-            write_frame(sock, make_command("set_time_scale", {"value": args.time_scale}))
-        if args.play_card_index is not None or args.play_card_id:
-            payload: dict[str, Any] = {}
-            if args.play_card_index is not None:
-                payload["index"] = args.play_card_index
-            if args.play_card_id:
-                payload["cardId"] = args.play_card_id
-            write_frame(sock, make_command("play_card", payload))
+        send_requested_commands(sock, args)
 
         received = 0
         while True:
@@ -181,6 +261,13 @@ def main() -> int:
             received += 1
             if args.read_count > 0 and received >= args.read_count:
                 return 0
+
+
+def print_message(message: dict[str, Any]) -> None:
+    if message.get("type") == "snapshot":
+        print_snapshot(message)
+        return
+    print(json.dumps(message, ensure_ascii=False, indent=2), flush=True)
 
 
 if __name__ == "__main__":

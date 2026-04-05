@@ -42,8 +42,17 @@ internal sealed class SocsCommandPayload
     [JsonPropertyName("index")]
     public int? Index { get; set; }
 
+    [JsonPropertyName("optionIndex")]
+    public int? OptionIndex { get; set; }
+
+    [JsonPropertyName("targetIndex")]
+    public int? TargetIndex { get; set; }
+
     [JsonPropertyName("cardId")]
     public string? CardId { get; set; }
+
+    [JsonPropertyName("targetId")]
+    public string? TargetId { get; set; }
 }
 
 internal sealed class SocsSnapshotEnvelope
