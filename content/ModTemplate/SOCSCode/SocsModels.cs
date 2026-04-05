@@ -126,8 +126,35 @@ internal sealed class SocsRunMetaSnapshot
     [JsonPropertyName("floor")]
     public int? Floor { get; set; }
 
+    [JsonPropertyName("potionCapacity")]
+    public int? PotionCapacity { get; set; }
+
+    [JsonPropertyName("potions")]
+    public List<SocsPotionSnapshot> Potions { get; set; } = new();
+
     [JsonPropertyName("relics")]
     public List<SocsRelicSnapshot> Relics { get; set; } = new();
+}
+
+internal sealed class SocsPotionSnapshot
+{
+    [JsonPropertyName("index")]
+    public int Index { get; set; }
+
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("usable")]
+    public bool? Usable { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("targeting")]
+    public string? Targeting { get; set; }
 }
 
 internal sealed class SocsRelicSnapshot

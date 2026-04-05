@@ -41,7 +41,10 @@ internal static class SocsRuntime
     private static readonly string[] ZoneMemberKeywords = ["Hand", "Draw", "Deck", "Discard", "Exhaust", "Pile"];
     private static readonly string[] EnergyMemberNames = ["Energy", "energy", "CurrentEnergy", "currentEnergy", "EnergyCount", "energyCount"];
     private static readonly string[] EnergyContainerNames = ["EnergyManager", "energyManager", "EnergyPanel", "energyPanel", "Mana", "mana"];
-    private static readonly string[] BlockMemberNames = ["Block", "block", "CurrentBlock", "currentBlock", "Armor", "armor"];
+    private static readonly string[] BlockMemberNames = ["Block", "block", "CurrentBlock", "currentBlock", "Armor", "armor", "BlockAmount", "blockAmount", "Defense", "defense"];
+    private static readonly string[] PotionCollectionNames = ["Potions", "potions", "PotionBelt", "potionBelt", "Consumables", "consumables"];
+    private static readonly string[] PotionCapacityNames = ["PotionCapacity", "potionCapacity", "MaxPotions", "maxPotions"];
+    private static readonly string[] PotionUsableNames = ["CanUse", "canUse", "IsUsable", "isUsable", "Playable", "playable"];
     private static readonly string[] EnemyCollectionMemberNames = ["Enemies", "enemies", "Monsters", "monsters", "Creatures", "creatures", "Combatants", "combatants", "Opponents", "opponents"];
     private static readonly string[] AliveMemberNames = ["Alive", "alive", "IsAlive", "isAlive", "Dead", "dead", "IsDead", "isDead"];
     private static readonly string[] PlayableMemberNames = ["Playable", "playable", "IsPlayable", "isPlayable", "CanPlay", "canPlay", "CanUse", "canUse", "CanCast", "canCast"];
@@ -308,8 +311,52 @@ internal static class SocsRuntime
         TryAssignField("runMeta.hp", () => runMeta.Hp = ProbeSnapshotInt(context, "hp", ["CurrentHealth", "CurrentHp", "Health", "Hp"]));
         TryAssignField("runMeta.gold", () => runMeta.Gold = ProbeSnapshotInt(context, "gold", ["Gold", "gold"]));
         TryAssignField("runMeta.floor", () => runMeta.Floor = ProbeSnapshotInt(context, "floor", ["Floor", "floor", "CurrentFloor", "ActFloor"]));
+        TryAssignField("runMeta.potionCapacity", () => runMeta.PotionCapacity = BuildPotionCapacitySnapshot(context));
+        TryAssignField("runMeta.potions", () => runMeta.Potions = BuildPotionsSnapshot(context));
         TryAssignField("runMeta.relics", () => runMeta.Relics = BuildRelicsSnapshot(context));
         return runMeta;
+    }
+
+    private static int? BuildPotionCapacitySnapshot(SnapshotProbeContext context)
+    {
+        return ProbeSnapshotInt(context, "potionCapacity", PotionCapacityNames);
+    }
+
+    private static List<SocsPotionSnapshot> BuildPotionsSnapshot(SnapshotProbeContext context)
+    {
+        object source = context.Player ?? context.Run ?? context.PlayerManager ?? context.Roots.First();
+        List<SocsPotionSnapshot> potions = [];
+        int index = 0;
+
+        foreach (object potion in EnumerateCompositeItems(source, context.Roots, PotionCollectionNames, MaxPlausibleOptions))
+        {
+            if (!LooksLikePotion(potion))
+            {
+                continue;
+            }
+
+            int potionIndex = index++;
+            var snapshot = new SocsPotionSnapshot
+            {
+                Index = potionIndex,
+                Id = BuildCardIdentity(potion),
+                Name = TryReadStringByNames(potion, CardNameMembers) ?? potion.GetType().Name,
+                Usable = TryReadBoolByNames(potion, out bool usable, PotionUsableNames) ? usable : null,
+                Description = TryReadStringByNames(potion, DescriptionMemberNames),
+                Targeting = NormalizeTargeting(potion)
+            };
+
+            potions.Add(snapshot);
+        }
+
+        return potions;
+    }
+
+    private static bool LooksLikePotion(object value)
+    {
+        string typeName = value.GetType().Name;
+        return ContainsAnyKeyword(typeName, ["Potion", "Consumable", "Flask", "Brew"])
+            || TryReadStringByNames(value, CardNameMembers) != null && TryReadBoolByNames(value, out _, PotionUsableNames);
     }
 
     private static List<SocsRelicSnapshot> BuildRelicsSnapshot(SnapshotProbeContext context)
@@ -992,7 +1039,8 @@ internal static class SocsRuntime
 
     private static string? NormalizeTargeting(object card)
     {
-        object? rawTarget = TryFindMember(card, TargetTypeMemberNames);
+        object? rawTarget = TryFindMember(card, TargetTypeMemberNames)
+            ?? TryFindMember(card, new[] { "Targeting", "targeting", "TargetMode", "targetMode" });
         if (rawTarget == null)
         {
             return null;

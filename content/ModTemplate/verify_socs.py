@@ -47,7 +47,103 @@ def make_command(name: str, payload: dict[str, Any] | None = None) -> dict[str, 
     }
 
 
+def format_value(value: Any, default: str = "?") -> str:
+    if value is None:
+        return default
+    return str(value)
+
+
+def format_power_list(powers: list[dict[str, Any]] | None) -> str:
+    if not powers:
+        return "[]"
+
+    items: list[str] = []
+    for power in powers:
+        name = format_value(power.get("id"), "Unknown")
+        amount = power.get("amount")
+        items.append(f"{name}: {amount}" if amount is not None else name)
+    return "[" + ", ".join(items) + "]"
+
+
+def format_card_line(card: dict[str, Any]) -> str:
+    index = format_value(card.get("index"), "?")
+    name = format_value(card.get("name") or card.get("id"), "Unknown")
+    cost = format_value(card.get("energyCost"), "?")
+    targeting = format_value(card.get("targeting"), "None")
+    pieces = [f"[{index}] {name} ({cost})"]
+
+    if card.get("baseDamage") is not None:
+        pieces.append(f"Dmg: {card['baseDamage']}")
+    if card.get("baseBlock") is not None:
+        pieces.append(f"Blk: {card['baseBlock']}")
+    pieces.append(f"Target: {targeting}")
+    return " | ".join(pieces)
+
+
+def print_snapshot(message: dict[str, Any]) -> None:
+    data = message.get("data") or {}
+    run_meta = data.get("runMeta") or {}
+    combat = data.get("combat") or {}
+    enemies = combat.get("enemies") or []
+    hand = combat.get("hand") or []
+
+    print("=" * 42)
+    print("[TURN START]")
+    print(
+        "Player HP: "
+        f"{format_value(run_meta.get('hp'))} "
+        f"| Block: {format_value(combat.get('playerBlock'), '0')} "
+        f"| Energy: {format_value(combat.get('playerEnergy'))}"
+    )
+    print(f"Player Powers: {format_power_list(combat.get('playerPowers'))}")
+
+    potion_capacity = run_meta.get("potionCapacity")
+    potions = run_meta.get("potions") or []
+    if potion_capacity is not None or potions:
+        potion_items = []
+        for potion in potions:
+            potion_name = format_value(potion.get("name") or potion.get("id"), "Unknown")
+            usable = potion.get("usable")
+            if usable is None:
+                potion_items.append(potion_name)
+            else:
+                potion_items.append(f"{potion_name} [usable={usable}]")
+        print(
+            f"Potions: {len(potions)}/{format_value(potion_capacity)} "
+            + ("| " + ", ".join(potion_items) if potion_items else "")
+        )
+
+    print("-" * 42)
+    print("[ENEMIES]")
+    if enemies:
+        for enemy in enemies:
+            index = format_value(enemy.get("index"), "?")
+            name = format_value(enemy.get("name") or enemy.get("id"), "Unknown")
+            hp = format_value(enemy.get("hp"))
+            block = format_value(enemy.get("block"), "0")
+            intent_type = format_value(enemy.get("intentType"), "UNKNOWN")
+            intent_damage = format_value(enemy.get("intentDamage"), "?")
+            intent_multi = format_value(enemy.get("intentMulti"), "?")
+            print(f"({index}) {name} [HP: {hp}] | BLOCK: {block}")
+            print(f"    -> Intent: {intent_type} ({intent_damage} x {intent_multi})")
+            print(f"    -> Powers: {format_power_list(enemy.get('powers'))}")
+    else:
+        print("(none)")
+
+    print("-" * 42)
+    print("[HAND CARDS]")
+    if hand:
+        for card in hand:
+            print(format_card_line(card))
+    else:
+        print("(empty)")
+    print("=" * 42, flush=True)
+
+
 def print_message(message: dict[str, Any]) -> None:
+    if message.get("type") == "snapshot":
+        print_snapshot(message)
+        return
     print(json.dumps(message, ensure_ascii=False, indent=2), flush=True)
 
 
